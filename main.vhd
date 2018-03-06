@@ -3,31 +3,6 @@ use IEEE.STD_LOGIC_1164.ALL;
 
 -- Uncomment the following library declaration if using
 -- arithmetic functions with Signed or Unsigned values
---use IEEE.NUMERIC_STD.ALL;
-
--- Uncomment the following library declaration if instantiating
--- any Xilinx leaf cells in this code.
---library UNISIM;
---use UNISIM.VComponents.all;
-
-entity main is
-  Port (
-  instr: in std_logic_vector(31 downto 0) );
-end main;
-
-architecture Behavioral of main is
-
-begin
-
-end Behavioral;
-
-----------------------------------------------------------------------------------
-
-library IEEE;
-use IEEE.STD_LOGIC_1164.ALL;
-
--- Uncomment the following library declaration if using
--- arithmetic functions with Signed or Unsigned values
 use IEEE.NUMERIC_STD.ALL;
 
 entity alu is
@@ -448,3 +423,130 @@ begin
                             from_mem(15)&from_mem(15)&from_mem(15)&from_mem(15)&from_mem(15)&from_mem(15)&from_mem(15)&from_mem(15)& from_mem(15 downto 0) when instr_type="0100" else
                             "00000000000000000000000000000000";
 end Behavioral;
+
+----------------------------------------------------------------------------------
+
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+
+entity multi2plex4 is
+  Port (
+  input1: in std_logic_vector(3 downto 0);
+  input2: in std_logic_vector(3 downto 0);
+  selector: in std_logic;
+  output: out std_logic_vector(3 downto 0) );
+end multi2plex4;
+
+architecture Behavioral of multi2plex4 is
+begin
+    output(3 downto 0) <= input1(3 downto 0) when selector='1' else input2(3 downto 0);
+end Behavioral;
+
+----------------------------------------------------------------------------------
+
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+
+entity multi2plex32 is
+  Port (
+  input1: in std_logic_vector(31 downto 0);
+  input2: in std_logic_vector(31 downto 0);
+  selector: in std_logic;
+  output: out std_logic_vector(31 downto 0) );
+end multi2plex32;
+
+architecture Behavioral of multi2plex32 is
+begin
+    output(31 downto 0) <= input1(31 downto 0) when selector='1' else input2(31 downto 0);
+end Behavioral;
+
+----------------------------------------------------------------------------------
+
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+
+entity multi4plex32 is
+  Port (
+  input1: in std_logic_vector(31 downto 0);
+  input2: in std_logic_vector(31 downto 0);
+  input3: in std_logic_vector(31 downto 0);
+  input4: in std_logic_vector(31 downto 0);
+  selector: in std_logic_vector(1 downto 0);
+  output: out std_logic_vector(31 downto 0) );
+end multi4plex32;
+
+architecture Behavioral of multi4plex32 is
+begin
+    output(31 downto 0) <= input1(31 downto 0) when selector="00" else 
+                           input2(31 downto 0) when selector="01" else
+                           input3(31 downto 0) when selector="10" else
+                           input4(31 downto 0);
+end Behavioral;
+
+----------------------------------------------------------------------------------
+
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+
+-- Uncomment the following library declaration if using
+-- arithmetic functions with Signed or Unsigned values
+--use IEEE.NUMERIC_STD.ALL;
+
+-- Uncomment the following library declaration if instantiating
+-- any Xilinx leaf cells in this code.
+--library UNISIM;
+--use UNISIM.VComponents.all;
+
+entity main is
+  Port (
+  pw: in std_logic;
+  iord: in std_logic;
+  mr: in std_logic;
+  mw: in std_logic;
+  iw: in std_logic;
+  dw: in std_logic;
+  rsrc: in std_logic;
+  m2r: in std_logic;
+  rw: in std_logic;
+  aw: in std_logic;
+  bw: in std_logic;
+  asrc1: in std_logic;
+  asrc2: in std_logic;
+  fset: in std_logic;
+  op: in std_logic_vector(3 downto 0);
+  rew: in std_logic;
+  clk: in std_logic;
+  instr: out std_logic_vector(31 downto 0);
+  flags: out std_logic_vector(3 downto 0) );
+end main;
+
+architecture Behavioral of main is
+signal aluop1, aluop2, aluout: std_logic_vector(31 downto 0);
+signal aluopc, alufl: std_logic_vector(3 downto 0);
+signal alucarry: std_logic;
+begin
+alu: entity work.alu
+    Port map (
+    operand1 => aluop1,
+    operand2 => aluop2,
+    operation => aluopc,
+    carry => alucarry,
+    output => aluout,
+    flag => alufl);
+
+--multi: entity work.multiplier
+--    Port map (
+--    operand1 => ,
+--    opernad2 => ,
+--    output => );
+    
+--shifter: entity work.shifter
+--    Port map (
+--    );
+    
+--rf: entity work.register_file
+--    Port map (
+--    );
+end Behavioral;
+
+----------------------------------------------------------------------------------
