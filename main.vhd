@@ -340,7 +340,7 @@ entity register_file is
   wren: in std_logic; 
   output1: out std_logic_vector(31 downto 0);
   output2: out std_logic_vector(31 downto 0);
-  pc: out std_logic );
+  pc: out std_logic_vector(31 downto 0) );
 end register_file;
 
 architecture Behavioral of register_file is
@@ -372,6 +372,7 @@ end generate;
 
 output1 <= outputarr(conv_integer(addr1(3 downto 0)));
 output2 <= outputarr(conv_integer(addr2(3 downto 0)));
+pc <= outputarr(15);
 
 process(reset,write_addr)
 begin
@@ -391,37 +392,103 @@ end Behavioral;
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 
+entity extension12 is
+  Port (
+  input: in std_logic_vector(11 downto 0);
+  output: out std_logic_vector(31 downto 0) );
+end extension12;
+
+architecture Behavioral of extension12 is
+begin
+    output(31 downto 0) <= "00000000000000000000" & input(11 downto 0);
+end Behavioral;
+
+----------------------------------------------------------------------------------
+
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+
+entity extension8 is
+  Port (
+  input: in std_logic_vector(7 downto 0);
+  output: out std_logic_vector(31 downto 0) );
+end extension8;
+
+architecture Behavioral of extension8 is
+begin
+    output(31 downto 0) <= "000000000000000000000000" & input(7 downto 0);
+end Behavioral;
+
+----------------------------------------------------------------------------------
+
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+
+entity signext24 is
+  Port (
+  input: in std_logic_vector(23 downto 0);
+  output: out std_logic_vector(31 downto 0) );
+end signext24;
+
+architecture Behavioral of signext24 is
+begin
+    output(31 downto 0) <= input(23)&input(23)&input(23)&input(23)&input(23)&input(23)&input(23)&input(23)&
+                           input(23 downto 0);
+end Behavioral;
+
+----------------------------------------------------------------------------------
+
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+
 -- Uncomment the following library declaration if using
 -- arithmetic functions with Signed or Unsigned values
 --use IEEE.NUMERIC_STD.ALL;
-
--- Uncomment the following library declaration if instantiating
--- any Xilinx leaf cells in this code.
---library UNISIM;
---use UNISIM.VComponents.all;
 
 entity prempath is
   Port (
   from_proc: in std_logic_vector(31 downto 0);
   from_mem: in std_logic_vector(31 downto 0);
   instr_type: in std_logic_vector(3 downto 0);
-  offset: in std_logic_vector(11 downto 0);
+  offset: in std_logic_vector(3 downto 0);
   to_proc: out std_logic_vector(31 downto 0);
   to_mem: out std_logic_vector(31 downto 0);
-  mem_wren: out std_logic );
+  mem_wren: out std_logic_vector(3 downto 0) );
 end prempath;
 
 architecture Behavioral of prempath is
 begin
     to_proc(31 downto 0) <= from_mem(31 downto 0) when instr_type="0000" else        --ldr
-                            "000000000000000000000000" & from_mem(7 downto 0) when instr_type="0001" else       --ldrb
-                            "0000000000000000" & from_mem(15 downto 0) when instr_type="0010" else      --ldrh
+                            "000000000000000000000000" & from_mem(7 downto 0) when (instr_type="0001" and offset="0001") else       --ldrb
+                            "000000000000000000000000" & from_mem(15 downto 8) when (instr_type="0001" and offset="0010") else
+                            "000000000000000000000000" & from_mem(23 downto 16) when (instr_type="0001" and offset="0100") else
+                            "000000000000000000000000" & from_mem(31 downto 24) when (instr_type="0001" and offset="0001") else
+                            "0000000000000000" & from_mem(15 downto 0) when (instr_type="0011" and offset="0011") else      --ldrh
+                            "0000000000000000" & from_mem(31 downto 16) when (instr_type="0011" and offset="1100") else
                             from_mem(7)&from_mem(7)&from_mem(7)&from_mem(7)&from_mem(7)&from_mem(7)&from_mem(7)&from_mem(7)&
                             from_mem(7)&from_mem(7)&from_mem(7)&from_mem(7)&from_mem(7)&from_mem(7)&from_mem(7)&from_mem(7)&
-                            from_mem(7)&from_mem(7)&from_mem(7)&from_mem(7)&from_mem(7)&from_mem(7)&from_mem(7)&from_mem(7)& from_mem(7 downto 0) when instr_type="0011" else       --ldrsb
+                            from_mem(7)&from_mem(7)&from_mem(7)&from_mem(7)&from_mem(7)&from_mem(7)&from_mem(7)&from_mem(7)& from_mem(7 downto 0) when (instr_type="0001" and offset="0001") else       --ldrsb
                             from_mem(15)&from_mem(15)&from_mem(15)&from_mem(15)&from_mem(15)&from_mem(15)&from_mem(15)&from_mem(15)&
-                            from_mem(15)&from_mem(15)&from_mem(15)&from_mem(15)&from_mem(15)&from_mem(15)&from_mem(15)&from_mem(15)& from_mem(15 downto 0) when instr_type="0100" else
+                            from_mem(15)&from_mem(15)&from_mem(15)&from_mem(15)&from_mem(15)&from_mem(15)&from_mem(15)&from_mem(15)&
+                            from_mem(15)&from_mem(15)&from_mem(15)&from_mem(15)&from_mem(15)&from_mem(15)&from_mem(15)&from_mem(15)& from_mem(15 downto 8) when (instr_type="0001" and offset="0010") else
+                            from_mem(23)&from_mem(23)&from_mem(23)&from_mem(23)&from_mem(23)&from_mem(23)&from_mem(23)&from_mem(23)&
+                            from_mem(23)&from_mem(23)&from_mem(23)&from_mem(23)&from_mem(23)&from_mem(23)&from_mem(23)&from_mem(23)&
+                            from_mem(23)&from_mem(23)&from_mem(23)&from_mem(23)&from_mem(23)&from_mem(23)&from_mem(23)&from_mem(23)& from_mem(23 downto 16) when (instr_type="0001" and offset="0100") else
+                            from_mem(31)&from_mem(31)&from_mem(31)&from_mem(31)&from_mem(31)&from_mem(31)&from_mem(31)&from_mem(31)&
+                            from_mem(31)&from_mem(31)&from_mem(31)&from_mem(31)&from_mem(31)&from_mem(31)&from_mem(31)&from_mem(31)&
+                            from_mem(31)&from_mem(31)&from_mem(31)&from_mem(31)&from_mem(31)&from_mem(31)&from_mem(31)&from_mem(31)& from_mem(15 downto 8) when (instr_type="0001" and offset="1000") else
+                            from_mem(15)&from_mem(15)&from_mem(15)&from_mem(15)&from_mem(15)&from_mem(15)&from_mem(15)&from_mem(15)&
+                            from_mem(15)&from_mem(15)&from_mem(15)&from_mem(15)&from_mem(15)&from_mem(15)&from_mem(15)&from_mem(15)& from_mem(15 downto 0) when (instr_type="0100" and offset="0011") else
+                            from_mem(31)&from_mem(31)&from_mem(31)&from_mem(31)&from_mem(31)&from_mem(31)&from_mem(31)&from_mem(31)&
+                            from_mem(31)&from_mem(31)&from_mem(31)&from_mem(31)&from_mem(31)&from_mem(31)&from_mem(31)&from_mem(31)& from_mem(31 downto 16) when (instr_type="0100" and offset="1100") else
                             "00000000000000000000000000000000";
+                            
+    to_mem(31 downto 0) <= from_proc(31 downto 0) when instr_type="0101" else
+                           from_proc(15 downto 0)&from_proc(15 downto 0) when instr_type="0110" else
+                           from_proc(7 downto 0)&from_proc(7 downto 0)&from_proc(7 downto 0)&from_proc(7 downto 0);
+                           
+    mem_wren(3 downto 0) <= "0001" when instr_type="0110" else "0011";
+                   
 end Behavioral;
 
 ----------------------------------------------------------------------------------
@@ -465,6 +532,24 @@ end Behavioral;
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 
+entity multi2plex2 is
+  Port (
+  input1: in std_logic_vector(1 downto 0);
+  input2: in std_logic_vector(1 downto 0);
+  selector: in std_logic;
+  output: out std_logic_vector(1 downto 0) );
+end multi2plex2;
+
+architecture Behavioral of multi2plex2 is
+begin
+    output(1 downto 0) <= input1(1 downto 0) when selector='1' else input2(1 downto 0);
+end Behavioral;
+
+----------------------------------------------------------------------------------
+
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+
 entity multi4plex32 is
   Port (
   input1: in std_logic_vector(31 downto 0);
@@ -488,6 +573,29 @@ end Behavioral;
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 
+entity multi4plex5 is
+  Port (
+  input1: in std_logic_vector(4 downto 0);
+  input2: in std_logic_vector(4 downto 0);
+  input3: in std_logic_vector(4 downto 0);
+  input4: in std_logic_vector(4 downto 0);
+  selector: in std_logic_vector(1 downto 0);
+  output: out std_logic_vector(4 downto 0) );
+end multi4plex5;
+
+architecture Behavioral of multi4plex5 is
+begin
+    output(4 downto 0) <= input1(4 downto 0) when selector="00" else 
+                           input2(4 downto 0) when selector="01" else
+                           input3(4 downto 0) when selector="10" else
+                           input4(4 downto 0);
+end Behavioral;
+
+----------------------------------------------------------------------------------
+
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+
 -- Uncomment the following library declaration if using
 -- arithmetic functions with Signed or Unsigned values
 --use IEEE.NUMERIC_STD.ALL;
@@ -501,19 +609,32 @@ entity main is
   Port (
   pw: in std_logic;
   iord: in std_logic;
+  mwdc: in std_logic;
   mr: in std_logic;
   mw: in std_logic;
   iw: in std_logic;
   dw: in std_logic;
-  rsrc: in std_logic;
-  m2r: in std_logic;
+  rsrc1: in std_logic;
+  rsrc2: in std_logic;
+  rsrc3: in std_logic;
+  rfreset: in std_logic;
+  rfwren: in std_logic;
   rw: in std_logic;
   aw: in std_logic;
   bw: in std_logic;
-  asrc1: in std_logic;
-  asrc2: in std_logic;
+  asrc: in std_logic;
+  bsrc: in std_logic_vector(1 downto 0);
+  aluop1c: in std_logic_vector(1 downto 0);
+  aluop2c: in std_logic_vector(1 downto 0);
+  aluopc: in std_logic_vector(3 downto 0);
+  alucarryc: in std_logic;
+  shdatac: in std_logic;
+  shamtc: in std_logic_vector(1 downto 0);
+  shtypec: in std_logic;
+  pminstr: in std_logic_vector(3 downto 0);
+  pmbyte: in std_logic_vector(3 downto 0);
   fset: in std_logic;
-  op: in std_logic_vector(3 downto 0);
+  resultc: in std_logic_vector(1 downto 0);
   rew: in std_logic;
   clk: in std_logic;
   instr: out std_logic_vector(31 downto 0);
@@ -521,32 +642,248 @@ entity main is
 end main;
 
 architecture Behavioral of main is
+-- ALU
 signal aluop1, aluop2, aluout: std_logic_vector(31 downto 0);
-signal aluopc, alufl: std_logic_vector(3 downto 0);
+signal aluop, alufl: std_logic_vector(3 downto 0);
 signal alucarry: std_logic;
+-- Shifter
+signal shdata,shout: std_logic_vector(31 downto 0);
+signal shamt: std_logic_vector(4 downto 0);
+signal shtype: std_logic_vector(1 downto 0);
+signal scar: std_logic;
+-- Multiplier
+signal multop1,multop2,multout: std_logic_vector(31 downto 0);
+-- P-M Path
+signal tom,from,top,frop: std_logic_vector(31 downto 0);
+-- Register File
+signal rad1,rad2,wad: std_logic_vector(3 downto 0);
+signal rd1,rd2,wd,rfpc: std_logic_vector(31 downto 0);
+-- Memory
+signal mad,mwd,mout: std_logic_vector(31 downto 0);
+-- Registers
+signal instruction,aout,bout,result,resout: std_logic_vector(31 downto 0);
+-- Multiplexers
+signal data1,data2: std_logic_vector(31 downto 0);
+-- Extension and sign ext
+signal ext8out,ext12out,signextout: std_logic_vector(31 downto 0);
+signal memwren: std_logic_vector(3 downto 0);
+signal ext4: std_logic_vector(4 downto 0);
 begin
 alu: entity work.alu
     Port map (
     operand1 => aluop1,
     operand2 => aluop2,
-    operation => aluopc,
+    operation => aluop,
     carry => alucarry,
     output => aluout,
     flag => alufl);
 
---multi: entity work.multiplier
---    Port map (
---    operand1 => ,
---    opernad2 => ,
---    output => );
+multi: entity work.multiplier
+    Port map (
+    operand1 => data2,
+    operand2 => data1,
+    output => multout);
     
---shifter: entity work.shifter
---    Port map (
---    );
+shifter: entity work.shifter
+    Port map (
+    data => shdata,
+    shift_amount => shamt,
+    shift_type => shtype,
+    output => shout,
+    shifter_carry => scar);
     
---rf: entity work.register_file
---    Port map (
---    );
+rf: entity work.register_file
+    Port map (
+    write_data => resout,
+    addr1 => rad1,
+    addr2 => rad2,
+    write_addr => wad,
+    clock => clk,
+    reset => rfreset,
+    wren => rfwren,
+    output1 => rd1,
+    output2 => rd2,
+    pc => rfpc);
+    
+procmem: entity work.prempath
+    Port map (
+    from_proc => frop,
+    from_mem => from,
+    instr_type => pminstr,
+    offset => pmbyte,
+    to_proc => top,
+    to_mem => tom,
+    mem_wren => memwren);
+    
+pc: entity work.registr
+    Port map (
+    input => rfpc,
+    clk => clk,
+    wren => pw,
+    output => rfpc);
+    
+ir: entity work.registr
+    Port map (
+    input => mout,
+    clk => clk,
+    wren => iw,
+    output => instruction);
+
+dr: entity work.registr
+    Port map (
+    input => mout,
+    clk => clk,
+    wren => dw,
+    output => from);
+    
+ar: entity work.registr
+    Port map (
+    input => rd1,
+    clk => clk,
+    wren => aw,
+    output => aout);
+    
+br: entity work.registr
+    Port map (
+    input => rd2,
+    clk => clk,
+    wren => bw,
+    output => bout);
+    
+res: entity work.registr
+    Port map (
+    input => result,
+    clk => clk,
+    wren => rew,
+    output => resout);
+    
+memad: entity work.multi2plex32
+    Port map (
+    input1 => rfpc,
+    input2 => resout,
+    selector => iord,
+    output => mad);
+    
+memwd: entity work.multi2plex32
+    Port map (
+    input1 => bout,
+    input2 => resout,
+    selector => mwdc,
+    output => mwd);
+    
+rfrad1: entity work.multi2plex4
+    Port map (
+    input1 => instruction(11 downto 8),
+    input2 => instruction(19 downto 16),
+    selector => rsrc1,
+    output => rad1);
+    
+rfrad2: entity work.multi2plex4
+    Port map (
+    input1 => instruction(15 downto 12),
+    input2 => instruction(3 downto 0),
+    selector => rsrc2,
+    output => rad2);
+    
+rfrad3: entity work.multi2plex4
+    Port map (
+    input1 => instruction(19 downto 16),
+    input2 => instruction(15 downto 12),
+    selector => rsrc3,
+    output => wad);
+    
+rfrd1: entity work.multi2plex32
+    Port map (
+    input1 => rfpc,
+    input2 => aout,
+    selector => asrc,
+    output => data1);
+    
+rfrd2: entity work.multi4plex32
+    Port map (
+    input1 => bout,
+    input2 => "00000000000000000000000000000100",
+    input3 => ext12out,
+    input4 => signextout,
+    selector => bsrc,
+    output => data2);
+    
+ext12: entity work.extension12
+    Port map (
+    input => instruction(11 downto 0),
+    output => ext12out);
+    
+signext: entity work.signext24
+    Port map (
+    input => instruction(23 downto 0),
+    output => signextout);
+    
+ext8: entity work.extension8
+    Port map (
+    input => instruction(7 downto 0),
+    output => ext8out);
+    
+alumux1: entity work.multi4plex32
+    Port map (
+    input1 => data1,
+    input2 => multout,
+    input3 => shout,
+    input4 => "00000000000000000000000000000000",
+    selector => aluop1c,
+    output => aluop1);
+    
+alumux2: entity work.multi4plex32
+    Port map (
+    input1 => data1,
+    input2 => shout,
+    input3 => data2,
+    input4 => "00000000000000000000000000000000",
+    selector => aluop2c,
+    output => aluop2);
+
+shiftdata: entity work.multi2plex32
+    Port map (
+    input1 => data2,
+    input2 => ext8out,
+    selector => shdatac,
+    output => shdata);
+    
+shiftamt: entity work.multi4plex5
+    Port map (
+    input1 => instruction(11 downto 7),
+    input2 => ext4,
+    input3 => data1(4 downto 0),
+    input4 => "00000",
+    selector => shamtc,
+    output => shamt);
+    
+shifttype: entity work.multi2plex2
+    Port map (
+    input1 => instruction(6 downto 5),
+    input2 => "01",
+    selector => shtypec,
+    output => shtype);
+    
+resselect: entity work.multi4plex32
+    Port map (
+    input1 => multout,
+    input2 => aluout,
+    input3 => tom,
+    input4 => "00000000000000000000000000000000",
+    selector => resultc,
+    output => result);
+    
+bram: entity work.bram_wrapper
+    Port map (
+    bram_porta_addr => mad,
+    bram_porta_clk => clk,
+    bram_porta_din => tom,
+    bram_porta_dout => from,
+    bram_porta_en => '1',
+    bram_porta_rst => '0',
+    bram_porta_we => memwren);
+    
+ext4 <= instruction(11 downto 8) & '0';
 end Behavioral;
 
 ----------------------------------------------------------------------------------
