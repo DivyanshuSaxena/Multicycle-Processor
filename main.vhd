@@ -885,5 +885,4 @@ bw <= '1' when aluop2c="11" else '0';
 rew <= '1' when resultc="11" else '0';
 shdatac <= '1' when shamtc="11" else '0';
 end Behavioral;
-
 ----------------------------------------------------------------------------------
