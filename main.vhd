@@ -610,8 +610,6 @@ entity main is
   pw: in std_logic;
   iord: in std_logic;
   mwdc: in std_logic;
-  mr: in std_logic;
-  mw: in std_logic;
   idw: in std_logic;
   rsrc1: in std_logic;
   rsrc2: in std_logic;
