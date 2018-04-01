@@ -35,12 +35,16 @@ instr_type <= "00" when instr(15 downto 14)="00" and (instr(13)='1' or instr(3)=
               "01" when instr(15 downto 14)="01" or (instr(15 downto 14)="00" and instr(3)='1' and not instr(2 downto 1)="00") else -- dt
               "10" when instr(15 downto 14)="00" and instr(3 downto 1)="100" else   -- mul or mla
               "11"; -- b
-instr_class <= "000" when instr(15 downto 14)="01" and instr(10)='0' and instr(8)='1' else    -- ldr  
-               "001" when instr(15 downto 14)="01" and instr(10)='0' and instr(8)='0' else    -- str  
-               "010" when instr(15 downto 14)="00" and instr(8)='1' else    -- ldrh
-               "011" when instr(15 downto 14)="00" and instr(8)='0' else    -- strh
-               "100" when instr(15 downto 14)="01" and instr(10)='1' and instr(8)='1' else    -- ldrb
-               "101" when instr(15 downto 14)="01" and instr(10)='1' and instr(8)='0';    -- strb  
+instr_class <= "000" when (instr(15 downto 14)="01" and instr(10)='0' and instr(8)='1') or 
+                        (instr(15 downto 14)="00" and (instr(13)='1' or instr(3)='0' or instr(0)='0') and instr(24 downto 21)="1000") else    -- ldr or tst 
+               "001" when (instr(15 downto 14)="01" and instr(10)='0' and instr(8)='0') or 
+                        (instr(15 downto 14)="00" and (instr(13)='1' or instr(3)='0' or instr(0)='0') and instr(24 downto 21)="1001") else    -- str or teq
+               "010" when (instr(15 downto 14)="00" and instr(3)='1' and not instr(2 downto 1)="00" and instr(8)='1') or 
+                        (instr(15 downto 14)="00" and (instr(13)='1' or instr(3)='0' or instr(0)='0') and instr(24 downto 21)="1010") else    -- ldrh or cmp
+               "011" when (instr(15 downto 14)="00" and instr(3)='1' and not instr(2 downto 1)="00" and instr(8)='0') or 
+                        (instr(15 downto 14)="00" and (instr(13)='1' or instr(3)='0' or instr(0)='0') and instr(24 downto 21)="1011") else    -- strh or cmn
+               "100" when (instr(15 downto 14)="01" and instr(10)='1') and instr(8)='1' else    -- ldrb
+               "101" when (instr(15 downto 14)="01" and instr(10)='1') and instr(8)='0';    -- strb  
                -- Do something for ldrsb and ldrsh
 instr_variant <= '1' when instr(13)='1' else '0';
 end Behavioral;
@@ -149,21 +153,6 @@ end Behavioral;
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 
-entity controller_fsm is
---    Port ();
-end controller_fsm;
-
-architecture Behavioral of controller_fsm is
-
-begin
-
-end Behavioral;
-
-----------------------------------------------------------------------------------
-
-library IEEE;
-use IEEE.STD_LOGIC_1164.ALL;
-
 -- Uncomment the following library declaration if using
 -- arithmetic functions with Signed or Unsigned values
 --use IEEE.NUMERIC_STD.ALL;
@@ -183,11 +172,11 @@ end controller;
 
 architecture Behavioral of controller is
 -- fsm
-type state_type is (fetch, readreg, decode, arith, mul, dt, brn, load, store);
+type state_type is (fetch, readreg, decode, arith_imm, arith_reg, mul, dt, brn, load, store, writerf);
 signal state: state_type;
 signal state_out: std_logic_vector(3 downto 0);
 -- control signals
-signal pw,iord,medc,idw,rsrc1,rsrc2,rsrc3,rfwren,asrc,shtypec,fset: std_logic;
+signal pw,iord,medc,idw,rsrc1,rsrc2,rsrc3,rfwren,asrc,shdatac,shtypec,fset,aw,bw: std_logic;
 signal bsrc,aluop1c,aluop2c,shamtc,resultc: std_logic_vector(1 downto 0);
 -- Combine aw with aluop1c="11"
 -- Combine bw with aluop2c="11"
@@ -203,6 +192,7 @@ signal instr_variant: std_logic;
 -- map flag_check
 signal pred,undef: std_logic;
 begin
+
 decoder: entity work.inst_decoder
     Port map (
         instr => instr,
@@ -239,7 +229,11 @@ begin
     elsif state=decode then
         idw <= '0';
         if instr_type="00" then
-            state <= arith;
+            if instr_variant='0' then
+                state <= arith_imm;
+            else
+                state <= arith_reg;
+            end if;
         elsif instr_type="01" then
             state <= dt;
         elsif instr_type="10" then
@@ -247,7 +241,16 @@ begin
         else
             state <= brn;
         end if;
-    elsif state=arith then
+    elsif state=arith_imm then
+        aw <= '1';
+        asrc <= '1';
+        shamtc <= "01";
+        shdatac <= '1';
+        shtypec <= '1';
+        aluop1c <= "00";
+        aluop2c <= "01";
+        resultc <= "01";
+        state <= writerf;
     elsif state=mul then
     elsif state=dt then
     elsif state=brn then

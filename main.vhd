@@ -617,10 +617,13 @@ entity main is
   rfwren: in std_logic;
   asrc: in std_logic;
   bsrc: in std_logic_vector(1 downto 0);
-  aluop1c: in std_logic_vector(1 downto 0); -- Combine aw with aluop1c="11"
-  aluop2c: in std_logic_vector(1 downto 0); -- Combine bw with aluop2c="11"
+  aw: in std_logic;
+  bw: in std_logic;
+  aluop1c: in std_logic_vector(1 downto 0); 
+  aluop2c: in std_logic_vector(1 downto 0); 
   aluop: in std_logic_vector(3 downto 0);
-  shamtc: in std_logic_vector(1 downto 0); -- Combine shdatac with shamtc="11"
+  shdatac: in std_logic;
+  shamtc: in std_logic_vector(1 downto 0);
   shtypec: in std_logic;
   pminstr: in std_logic_vector(2 downto 0);
   pmbyte: in std_logic_vector(2 downto 0);
@@ -661,7 +664,7 @@ signal ext8out,ext12out,signextout: std_logic_vector(31 downto 0);
 signal memwren: std_logic_vector(3 downto 0);
 signal ext4: std_logic_vector(4 downto 0);
 -- Induced Signals
-signal aw,bw,rew,shdatac: std_logic;
+signal rew,shdatac: std_logic;
 begin
 alu: entity work.alu
     Port map (
@@ -879,10 +882,7 @@ bram: entity work.bram_wrapper
     
 ext4 <= instruction(11 downto 8) & '0';
 wren_mem(3 downto 0) <= memwren(3 downto 0);
-aw <= '1' when aluop1c="11" else '0';
-bw <= '1' when aluop2c="11" else '0';
 rew <= '1' when resultc="11" else '0';
-shdatac <= '1' when shamtc="11" else '0';
 instr <= instruction;
 dw <= '1' when idw='0' else '0';
 end Behavioral;
