@@ -653,6 +653,7 @@ signal rd1,rd2,wd,rfpc: std_logic_vector(31 downto 0);
 signal mad,mwd,mout: std_logic_vector(31 downto 0);
 -- Registers
 signal instruction,aout,bout,result,resout: std_logic_vector(31 downto 0);
+signal dw: std_logic;
 -- Multiplexers
 signal data1,data2: std_logic_vector(31 downto 0);
 -- Extension and sign ext
@@ -726,7 +727,7 @@ dr: entity work.registr
     Port map (
     input => mout,
     clk => clk,
-    wren => idw,
+    wren => dw,
     output => from);
     
 ar: entity work.registr
@@ -882,5 +883,7 @@ aw <= '1' when aluop1c="11" else '0';
 bw <= '1' when aluop2c="11" else '0';
 rew <= '1' when resultc="11" else '0';
 shdatac <= '1' when shamtc="11" else '0';
+instr <= instruction;
+dw <= '1' when idw='0' else '0';
 end Behavioral;
 ----------------------------------------------------------------------------------

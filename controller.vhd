@@ -18,55 +18,6 @@
 -- 
 ----------------------------------------------------------------------------------
 
-
-library IEEE;
-use IEEE.STD_LOGIC_1164.ALL;
-
--- Uncomment the following library declaration if using
--- arithmetic functions with Signed or Unsigned values
---use IEEE.NUMERIC_STD.ALL;
-
--- Uncomment the following library declaration if instantiating
--- any Xilinx leaf cells in this code.
---library UNISIM;
---use UNISIM.VComponents.all;
-
-entity controller is
-  Port (
-  clk: in std_logic;
-  control: out std_logic_vector(31 downto 0) );
-end controller;
-
-architecture Behavioral of controller is
-type state_type is (fetch, read, decode, arith, mul, dt, brn, load, store);
-signal state: state_type;
-signal pw,iord,medc,idw,rsrc1,rsrc2,rsrc3,rfwren,asrc,shtypec,fset: std_logic;
-signal bsrc,aluop1c,aluop2c,shamtc,resultc: std_logic_vector(1 downto 0);
--- Combine aw with aluop1c="11"
--- Combine bw with aluop2c="11"
--- Combine shdatac with shamtc="11"
--- Combine rew with resultc="11"
-signal aluop: std_logic_vector(3 downto 0);
-signal pminstr,pmbyte: std_logic_vector(2 downto 0);
-begin
-process (clk)
-begin
-    if state=fetch then
-        iord <= '0';
-    elsif state=read then
-    elsif state=decode then
-    elsif state=arith then
-    elsif state=mul then
-    elsif state=dt then
-    elsif state=brn then
-    elsif state=load then
-    elsif state=store then
-    end if;
-end process;
-end Behavioral;
-
-----------------------------------------------------------------------------------
-
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 
@@ -198,20 +149,6 @@ end Behavioral;
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 
-entity control_generator is
---    Port ();
-end control_generator;
-
-architecture Behavioral of control_generator is
-begin
-
-end Behavioral;
-
-----------------------------------------------------------------------------------
-
-library IEEE;
-use IEEE.STD_LOGIC_1164.ALL;
-
 entity controller_fsm is
 --    Port ();
 end controller_fsm;
@@ -221,3 +158,103 @@ architecture Behavioral of controller_fsm is
 begin
 
 end Behavioral;
+
+----------------------------------------------------------------------------------
+
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+
+-- Uncomment the following library declaration if using
+-- arithmetic functions with Signed or Unsigned values
+--use IEEE.NUMERIC_STD.ALL;
+
+-- Uncomment the following library declaration if instantiating
+-- any Xilinx leaf cells in this code.
+--library UNISIM;
+--use UNISIM.VComponents.all;
+
+entity controller is
+  Port (
+  clk: in std_logic;
+  instruction: in std_logic_vector(31 downto 0);
+  flags: in std_logic_vector(3 downto 0);
+  control: out std_logic_vector(31 downto 0) );
+end controller;
+
+architecture Behavioral of controller is
+-- fsm
+type state_type is (fetch, readreg, decode, arith, mul, dt, brn, load, store);
+signal state: state_type;
+signal state_out: std_logic_vector(3 downto 0);
+-- control signals
+signal pw,iord,medc,idw,rsrc1,rsrc2,rsrc3,rfwren,asrc,shtypec,fset: std_logic;
+signal bsrc,aluop1c,aluop2c,shamtc,resultc: std_logic_vector(1 downto 0);
+-- Combine aw with aluop1c="11"
+-- Combine bw with aluop2c="11"
+-- Combine shdatac with shamtc="11"
+-- Combine rew with resultc="11"
+signal aluop: std_logic_vector(3 downto 0);
+signal pminstr,pmbyte: std_logic_vector(2 downto 0);
+-- map inst_decoder
+signal instr: std_logic_vector(15 downto 0);
+signal instr_type: std_logic_vector(1 downto 0);
+signal instr_class: std_logic_vector(2 downto 0);
+signal instr_variant: std_logic;
+-- map flag_check
+signal pred,undef: std_logic;
+begin
+decoder: entity work.inst_decoder
+    Port map (
+        instr => instr,
+        instr_type => instr_type,
+        instr_class => instr_class,
+        instr_variant => instr_variant
+    );
+flag_control: entity work.flag_check
+    Port map (
+        flags => flags,
+        cond => instruction(31 downto 28),
+        predicate => pred,
+        undef => undef
+    );
+
+instr <= instruction(27 downto 20) & instruction(11 downto 4);
+process (clk)
+begin
+    if state=fetch then
+        pw <= '0';
+        iord <= '0';
+        asrc <= '0';
+        bsrc <= "01";
+        aluop1c <= "00";
+        aluop2c <= "10";
+        resultc <= "01";
+        state <= readreg;
+    elsif state=readreg then
+        idw <= '1';
+        rsrc1 <= '1';
+        rsrc2 <= '1';
+        rsrc3 <= '1';
+        state <= decode;
+    elsif state=decode then
+        idw <= '0';
+        if instr_type="00" then
+            state <= arith;
+        elsif instr_type="01" then
+            state <= dt;
+        elsif instr_type="10" then
+            state <= mul;
+        else
+            state <= brn;
+        end if;
+    elsif state=arith then
+    elsif state=mul then
+    elsif state=dt then
+    elsif state=brn then
+    elsif state=load then
+    elsif state=store then
+    end if;
+end process;
+end Behavioral;
+
+----------------------------------------------------------------------------------
