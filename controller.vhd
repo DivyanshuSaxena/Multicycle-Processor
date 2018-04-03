@@ -302,7 +302,13 @@ begin
     elsif state=store then
     elsif state=writerf then
         rew <= '1';
-        rfwren <= pred;
+        if instr_type="00" and 
+        (instr_class="000" or instr_class="001" or instr_class="010" or instr_class="011") then
+            -- If cmp/cmn/tst/teq
+            rfwren <= '0';
+        else
+            rfwren <= pred;
+        end if;
         if instr_type="10" then
             rsrc3 <= '0';
         else
