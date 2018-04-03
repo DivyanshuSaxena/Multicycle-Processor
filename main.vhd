@@ -829,7 +829,7 @@ alumux1: entity work.multi2plex32
 alumux2: entity work.multi4plex32
     Port map (
     input1 => data1,
-    input2 => shout,
+    input2 => resout,
     input3 => data2,
     input4 => "00000000000000000000000000000000",
     selector => aluop2c,

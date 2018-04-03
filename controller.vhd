@@ -175,7 +175,7 @@ end controller;
 architecture Behavioral of controller is
 -- fsm
 type state_type is (fetch, readreg, decode, arith_imm, arith_reg, arith_sh_imm, arith_sh_reg,
-arith_shreg_alu,mul, dt, brn, load, store, writerf);
+alu, mul, dt, brn, load, store, writerf, pcincr, pcupdate);
 signal state: state_type;
 signal state_out: std_logic_vector(3 downto 0);
 -- control signals
@@ -212,15 +212,12 @@ instr <= instruction(27 downto 20) & instruction(11 downto 4);
 process (clk)
 begin
     if state=fetch then
-        pw <= '0';
+        pw <= '1';
+        rew <= '0';
         iord <= '0';
-        asrc <= '0';
-        bsrc <= "01";
-        aluop1c <= '0';
-        aluop2c <= "10";
-        resultc <= "01";
         state <= readreg;
     elsif state=readreg then
+        pw <= '0';
         idw <= '1';
         rsrc1 <= '1';
         rsrc2 <= '1';
@@ -247,39 +244,43 @@ begin
         shamtc <= "01";
         shdatac <= '1';
         shtypec <= '1';
-        aluop1c <= '0';
-        aluop2c <= "01";
-        resultc <= "01";
-        state <= writerf;
+        resultc <= "11";
+        state <= alu;
     elsif state=arith_reg then
         aw <= '1';
         bw <= '1';
         asrc <= '1';
         bsrc <= "00";
         if instr_shift='1' then
+            rsrc1 <= '0';
             state <= arith_sh_reg;
         else
-            rsrc1 <= '0';
             state <= arith_sh_imm;
         end if;
     elsif state=arith_sh_imm then
         aw <= '0';
-        rsrc1 <= '1';
         shamtc <= "00";
         shtypec <= '0';
         shdatac <= '0';
-        aluop1c <= '0';
-        aluop2c <= "01";
-        resultc <= "01";
-        state <= writerf;
+        resultc <= "11";
+        state <= alu;
     elsif state=arith_sh_reg then
         aw <= '0';
+        rsrc1 <= '1';
         shamtc <= "10";
         shdatac <= '0';
         shtypec <= '0';
-        state <= arith_shreg_alu;
-    elsif state=arith_shreg_alu then
+        resultc <= "11";
+        state <= alu;
+    -- elsif state=arith_shreg_alu then
+    --     aw <= '1';
+    --     aluop1c <= '0';
+    --     aluop2c <= "01";
+    --     resultc <= "01";
+    --     state <= writerf;
+    elsif state=alu then
         aw <= '1';
+        rew <= '1';
         aluop1c <= '0';
         aluop2c <= "01";
         resultc <= "01";
@@ -287,9 +288,40 @@ begin
     elsif state=mul then
     elsif state=dt then
     elsif state=brn then
+        asrc <= '0';
+        bsrc <= "11";
+        aluop1c <= '0';
+        aluop2c <= "10";
+        resultc <= "01";
+        if pred='1' then
+            state <= pcupdate;
+        else
+            state <= pcincr;
+        end if;
     elsif state=load then
     elsif state=store then
     elsif state=writerf then
+        rew <= '1';
+        rfwren <= pred;
+        if instr_type="10" then
+            rsrc3 <= '0';
+        else
+            rsrc3 <= '1';
+        end if;
+        state <= pcincr;
+    elsif state=pcincr then
+        rew <= '1';
+        rfwren <= '0';
+        asrc <= '0';
+        bsrc <= "01";
+        aluop1c <= '0';
+        aluop2c <= "10";
+        resultc <= "01";
+        state <= fetch;
+    elsif state=pcupdate then
+        rew <= '1';
+        rfwren <= '0';
+        state <= fetch;
     end if;
 end process;
 end Behavioral;
