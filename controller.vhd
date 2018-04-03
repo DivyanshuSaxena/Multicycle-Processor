@@ -179,12 +179,8 @@ arith_shreg_alu,mul, dt, brn, load, store, writerf);
 signal state: state_type;
 signal state_out: std_logic_vector(3 downto 0);
 -- control signals
-signal pw,iord,medc,idw,rsrc1,rsrc2,rsrc3,rfwren,asrc,shdatac,shtypec,fset,aw,bw: std_logic;
-signal bsrc,aluop1c,aluop2c,shamtc,resultc: std_logic_vector(1 downto 0);
--- Combine aw with aluop1c="11"
--- Combine bw with aluop2c="11"
--- Combine shdatac with shamtc="11"
--- Combine rew with resultc="11"
+signal pw,iord,medc,idw,rsrc1,rsrc2,rsrc3,rfwren,asrc,shdatac,shtypec,fset,aw,bw,aluop1c,rew: std_logic;
+signal bsrc,aluop2c,shamtc,resultc: std_logic_vector(1 downto 0);
 signal aluop: std_logic_vector(3 downto 0);
 signal pminstr,pmbyte: std_logic_vector(2 downto 0);
 -- map inst_decoder
@@ -220,7 +216,7 @@ begin
         iord <= '0';
         asrc <= '0';
         bsrc <= "01";
-        aluop1c <= "00";
+        aluop1c <= '0';
         aluop2c <= "10";
         resultc <= "01";
         state <= readreg;
@@ -251,7 +247,7 @@ begin
         shamtc <= "01";
         shdatac <= '1';
         shtypec <= '1';
-        aluop1c <= "00";
+        aluop1c <= '0';
         aluop2c <= "01";
         resultc <= "01";
         state <= writerf;
@@ -272,18 +268,19 @@ begin
         shamtc <= "00";
         shtypec <= '0';
         shdatac <= '0';
-        aluop1c <= "00";
+        aluop1c <= '0';
         aluop2c <= "01";
         resultc <= "01";
         state <= writerf;
     elsif state=arith_sh_reg then
+        aw <= '0';
         shamtc <= "10";
         shdatac <= '0';
         shtypec <= '0';
         state <= arith_shreg_alu;
     elsif state=arith_shreg_alu then
         aw <= '1';
-        aluop1c <= "00";
+        aluop1c <= '0';
         aluop2c <= "01";
         resultc <= "01";
         state <= writerf;
@@ -292,6 +289,7 @@ begin
     elsif state=brn then
     elsif state=load then
     elsif state=store then
+    elsif state=writerf then
     end if;
 end process;
 end Behavioral;

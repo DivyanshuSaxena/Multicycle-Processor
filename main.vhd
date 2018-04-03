@@ -619,7 +619,7 @@ entity main is
   bsrc: in std_logic_vector(1 downto 0);
   aw: in std_logic;
   bw: in std_logic;
-  aluop1c: in std_logic_vector(1 downto 0); 
+  aluop1c: in std_logic; 
   aluop2c: in std_logic_vector(1 downto 0); 
   aluop: in std_logic_vector(3 downto 0);
   shdatac: in std_logic;
@@ -628,7 +628,8 @@ entity main is
   pminstr: in std_logic_vector(2 downto 0);
   pmbyte: in std_logic_vector(2 downto 0);
   fset: in std_logic;
-  resultc: in std_logic_vector(1 downto 0); -- Combine rew with resultc="11"
+  rew: in std_logic;
+  resultc: in std_logic_vector(1 downto 0);
   clk: in std_logic;
   instr: out std_logic_vector(31 downto 0);
   wren_mem: out std_logic_vector(3 downto 0);
@@ -663,8 +664,6 @@ signal data1,data2: std_logic_vector(31 downto 0);
 signal ext8out,ext12out,signextout: std_logic_vector(31 downto 0);
 signal memwren: std_logic_vector(3 downto 0);
 signal ext4: std_logic_vector(4 downto 0);
--- Induced Signals
-signal rew,shdatac: std_logic;
 begin
 alu: entity work.alu
     Port map (
@@ -820,12 +819,10 @@ ext8: entity work.extension8
     input => instruction(7 downto 0),
     output => ext8out);
     
-alumux1: entity work.multi4plex32
+alumux1: entity work.multi2plex32
     Port map (
     input1 => data1,
-    input2 => multout,
-    input3 => shout,
-    input4 => "00000000000000000000000000000000",
+    input2 => resout,
     selector => aluop1c,
     output => aluop1);
     
@@ -866,7 +863,7 @@ resselect: entity work.multi4plex32
     input1 => multout,
     input2 => aluout,
     input3 => tom,
-    input4 => "00000000000000000000000000000000",
+    input4 => shout,
     selector => resultc,
     output => result);
     
@@ -882,7 +879,6 @@ bram: entity work.bram_wrapper
     
 ext4 <= instruction(11 downto 8) & '0';
 wren_mem(3 downto 0) <= memwren(3 downto 0);
-rew <= '1' when resultc="11" else '0';
 instr <= instruction;
 dw <= '1' when idw='0' else '0';
 end Behavioral;
