@@ -26,7 +26,8 @@ entity inst_decoder is
     instr: in std_logic_vector(15 downto 0);
     instr_type: out std_logic_vector(1 downto 0);
     instr_class: out std_logic_vector(2 downto 0);
-    instr_variant: out std_logic );
+    instr_variant: out std_logic;
+    instr_shift: out std_logic );
 end inst_decoder;
 
 architecture Behavioral of inst_decoder is
@@ -43,10 +44,11 @@ instr_class <= "000" when (instr(15 downto 14)="01" and instr(10)='0' and instr(
                         (instr(15 downto 14)="00" and (instr(13)='1' or instr(3)='0' or instr(0)='0') and instr(24 downto 21)="1010") else    -- ldrh or cmp
                "011" when (instr(15 downto 14)="00" and instr(3)='1' and not instr(2 downto 1)="00" and instr(8)='0') or 
                         (instr(15 downto 14)="00" and (instr(13)='1' or instr(3)='0' or instr(0)='0') and instr(24 downto 21)="1011") else    -- strh or cmn
-               "100" when (instr(15 downto 14)="01" and instr(10)='1') and instr(8)='1' else    -- ldrb
+               "100" when ((instr(15 downto 14)="01" and instr(10)='1') and instr(8)='1') else    -- ldrb
                "101" when (instr(15 downto 14)="01" and instr(10)='1') and instr(8)='0';    -- strb  
                -- Do something for ldrsb and ldrsh
 instr_variant <= '1' when instr(13)='1' else '0';
+instr_shift <= '1' when instr(0)='1' else '0'; -- '1' when shift is from reg
 end Behavioral;
 
 ----------------------------------------------------------------------------------
@@ -172,7 +174,8 @@ end controller;
 
 architecture Behavioral of controller is
 -- fsm
-type state_type is (fetch, readreg, decode, arith_imm, arith_reg, mul, dt, brn, load, store, writerf);
+type state_type is (fetch, readreg, decode, arith_imm, arith_reg, arith_sh_imm, arith_sh_reg,
+arith_shreg_alu,mul, dt, brn, load, store, writerf);
 signal state: state_type;
 signal state_out: std_logic_vector(3 downto 0);
 -- control signals
@@ -188,7 +191,7 @@ signal pminstr,pmbyte: std_logic_vector(2 downto 0);
 signal instr: std_logic_vector(15 downto 0);
 signal instr_type: std_logic_vector(1 downto 0);
 signal instr_class: std_logic_vector(2 downto 0);
-signal instr_variant: std_logic;
+signal instr_variant,instr_shift: std_logic;
 -- map flag_check
 signal pred,undef: std_logic;
 begin
@@ -198,7 +201,8 @@ decoder: entity work.inst_decoder
         instr => instr,
         instr_type => instr_type,
         instr_class => instr_class,
-        instr_variant => instr_variant
+        instr_variant => instr_variant,
+        instr_shift => instr_shift
     );
 flag_control: entity work.flag_check
     Port map (
@@ -247,6 +251,38 @@ begin
         shamtc <= "01";
         shdatac <= '1';
         shtypec <= '1';
+        aluop1c <= "00";
+        aluop2c <= "01";
+        resultc <= "01";
+        state <= writerf;
+    elsif state=arith_reg then
+        aw <= '1';
+        bw <= '1';
+        asrc <= '1';
+        bsrc <= "00";
+        if instr_shift='1' then
+            state <= arith_sh_reg;
+        else
+            rsrc1 <= '0';
+            state <= arith_sh_imm;
+        end if;
+    elsif state=arith_sh_imm then
+        aw <= '0';
+        rsrc1 <= '1';
+        shamtc <= "00";
+        shtypec <= '0';
+        shdatac <= '0';
+        aluop1c <= "00";
+        aluop2c <= "01";
+        resultc <= "01";
+        state <= writerf;
+    elsif state=arith_sh_reg then
+        shamtc <= "10";
+        shdatac <= '0';
+        shtypec <= '0';
+        state <= arith_shreg_alu;
+    elsif state=arith_shreg_alu then
+        aw <= '1';
         aluop1c <= "00";
         aluop2c <= "01";
         resultc <= "01";
