@@ -213,6 +213,7 @@ process (clk)
 begin
     if state=fetch then
         pw <= '1';
+        rfwren <= '0';
         rew <= '0';
         iord <= '0';
         state <= readreg;
@@ -245,6 +246,7 @@ begin
         shdatac <= '1';
         shtypec <= '1';
         resultc <= "11";
+        rew <= '1';
         state <= alu;
     elsif state=arith_reg then
         aw <= '1';
@@ -263,6 +265,7 @@ begin
         shtypec <= '0';
         shdatac <= '0';
         resultc <= "11";
+        rew <= '1';
         state <= alu;
     elsif state=arith_sh_reg then
         aw <= '0';
@@ -271,6 +274,7 @@ begin
         shdatac <= '0';
         shtypec <= '0';
         resultc <= "11";
+        rew <= '1';
         state <= alu;
     -- elsif state=arith_shreg_alu then
     --     aw <= '1';
@@ -280,7 +284,7 @@ begin
     --     state <= writerf;
     elsif state=alu then
         aw <= '1';
-        rew <= '1';
+        rew <= '0';
         aluop1c <= '0';
         aluop2c <= "01";
         resultc <= "01";
