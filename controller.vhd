@@ -37,9 +37,11 @@ instr_type <= "00" when instr(15 downto 14)="00" and (instr(13)='1' or instr(3)=
               "10" when instr(15 downto 14)="00" and instr(3 downto 1)="100" else   -- mul or mla
               "11"; -- b
 instr_class <= "000" when (instr(15 downto 14)="01" and instr(10)='0' and instr(8)='1') or 
-                        (instr(15 downto 14)="00" and (instr(13)='1' or instr(3)='0' or instr(0)='0') and instr(24 downto 21)="1000") else    -- ldr or tst 
+                        (instr(15 downto 14)="00" and (instr(13)='1' or instr(3)='0' or instr(0)='0') and instr(24 downto 21)="1000") or
+                        (instr(15 downto 14)="00" and instr(3 downto 1)="100" and instr(9)='0') else    -- ldr or tst or simple mul 
                "001" when (instr(15 downto 14)="01" and instr(10)='0' and instr(8)='0') or 
-                        (instr(15 downto 14)="00" and (instr(13)='1' or instr(3)='0' or instr(0)='0') and instr(24 downto 21)="1001") else    -- str or teq
+                        (instr(15 downto 14)="00" and (instr(13)='1' or instr(3)='0' or instr(0)='0') and instr(24 downto 21)="1001") or
+                        (instr(15 downto 14)="00" and instr(3 downto 1)="100" and instr(9)='1') else    -- str or teq or mla
                "010" when (instr(15 downto 14)="00" and instr(3)='1' and not instr(2 downto 1)="00" and instr(8)='1') or 
                         (instr(15 downto 14)="00" and (instr(13)='1' or instr(3)='0' or instr(0)='0') and instr(24 downto 21)="1010") else    -- ldrh or cmp
                "011" when (instr(15 downto 14)="00" and instr(3)='1' and not instr(2 downto 1)="00" and instr(8)='0') or 
@@ -175,7 +177,7 @@ end controller;
 architecture Behavioral of controller is
 -- fsm
 type state_type is (fetch, readreg, decode, arith_imm, arith_reg, arith_sh_imm, arith_sh_reg,
-alu, mul, dt, brn, load, store, writerf, pcincr, pcupdate);
+alu, mul, mla, mla_alu, dt, brn, load, store, writerf, pcincr, pcupdate);
 signal state: state_type;
 signal state_out: std_logic_vector(3 downto 0);
 -- control signals
@@ -235,6 +237,8 @@ begin
         elsif instr_type="01" then
             state <= dt;
         elsif instr_type="10" then
+            rsrc1 <= '0';
+            rsrc3 <= '0';
             state <= mul;
         else
             state <= brn;
@@ -287,15 +291,42 @@ begin
         rew <= '0';
         aluop1c <= '0';
         aluop2c <= "01";
+        aluop <= instruction(24 downto 21);
         resultc <= "01";
         state <= writerf;
     elsif state=mul then
+        aw <= '1';
+        bw <= '1';
+        asrc <= '1';
+        bsrc <= "00";
+        resultc <= "00";
+        if instr_class="000" then
+            state <= writerf;
+        else
+            state <= mla;
+        end if;
+    elsif state=mla then
+        bw <= '0';
+        rsrc2 <= '0';
+        rew <= '1';
+        rfwren <= '0';
+        state <= mla_alu;
+    elsif state=mla_alu then
+        rew <= '0';
+        bw <= '1';
+        bsrc <= "00";
+        aluop1c <= '1';
+        aluop2c <= "10";
+        aluop <= "0100";
+        resultc <= "01";
+        state <= writerf;
     elsif state=dt then
     elsif state=brn then
         asrc <= '0';
         bsrc <= "11";
         aluop1c <= '0';
         aluop2c <= "10";
+        aluop <= "0100";
         resultc <= "01";
         if pred='1' then
             state <= pcupdate;
@@ -326,6 +357,7 @@ begin
         bsrc <= "01";
         aluop1c <= '0';
         aluop2c <= "10";
+        aluop <= "0100";
         resultc <= "01";
         state <= fetch;
     elsif state=pcupdate then
