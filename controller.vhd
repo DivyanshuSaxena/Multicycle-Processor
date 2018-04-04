@@ -363,11 +363,14 @@ begin
     elsif state=dt then
         if instr_class="000" or instr_class="010" or instr_class="100" then
             rew <= '1';
+            rfwren <= '0';
             iord <= '1';
             iw <= '0';
             dw <= '0';
             state <= load;
         else
+            rew <= '1';
+            iord <= '1';
             rsrc2 <= '0';
             state <= store;
         end if;
@@ -390,11 +393,9 @@ begin
         resultc <= "10";
         state <= writerf;
     elsif state=store then
+        rew <= '0';
         bw <= '1';
         bsrc <= "00";
-        resultc <= "10";
-        rew <= '1';
-        iord <= '1';
         pminstr <= "101";
         state <= pcincr;
     elsif state=writerf then

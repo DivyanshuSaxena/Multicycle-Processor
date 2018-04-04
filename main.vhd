@@ -655,12 +655,12 @@ signal scar: std_logic;
 -- Multiplier
 signal multop1,multop2,multout: std_logic_vector(31 downto 0);
 -- P-M Path
-signal tom,from,top,frop: std_logic_vector(31 downto 0);
+signal tom,from,top: std_logic_vector(31 downto 0);
 -- Register File
 signal rad1,rad2,wad: std_logic_vector(3 downto 0);
 signal rd1,rd2,wd,rfpc: std_logic_vector(31 downto 0);
 -- Memory
-signal mad,mwd,mout: std_logic_vector(31 downto 0);
+signal mad,mout: std_logic_vector(31 downto 0);
 -- Registers
 signal instruction,aout,bout,result,resout: std_logic_vector(31 downto 0);
 signal dw: std_logic;
@@ -709,7 +709,7 @@ rf: entity work.register_file
     
 procmem: entity work.prempath
     Port map (
-    from_proc => frop,
+    from_proc => data2,
     from_mem => from,
     instr_type => pminstr,
     offset => pmbyte,
@@ -861,7 +861,7 @@ resselect: entity work.multi4plex32
     Port map (
     input1 => multout,
     input2 => aluout,
-    input3 => tom,
+    input3 => top,
     input4 => shout,
     selector => resultc,
     output => result);
@@ -871,7 +871,7 @@ bram: entity work.bram_wrapper
     bram_porta_addr => mad,
     bram_porta_clk => clk,
     bram_porta_din => tom,
-    bram_porta_dout => from,
+    bram_porta_dout => mout,
     bram_porta_en => '1',
     bram_porta_rst => '0',
     bram_porta_we => memwren);
