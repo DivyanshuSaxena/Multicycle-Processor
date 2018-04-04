@@ -171,17 +171,17 @@ entity controller is
   clk: in std_logic;
   instruction: in std_logic_vector(31 downto 0);
   flags: in std_logic_vector(3 downto 0);
-  control: out std_logic_vector(31 downto 0) );
+  control: out std_logic_vector(33 downto 0) );
 end controller;
 
 architecture Behavioral of controller is
 -- fsm
 type state_type is (fetch, readreg, decode, arith_imm, arith_reg, arith_sh_imm, arith_sh_reg,
-alu, mul, mla, mla_alu, dt, brn, load, store, writerf, pcincr, pcupdate);
+alu, mul, mla, mla_alu, dt_imm, dt_reg, dt_alu, dt, brn, load, store, writerf, pcincr, pcupdate);
 signal state: state_type;
 signal state_out: std_logic_vector(3 downto 0);
 -- control signals
-signal pw,iord,medc,idw,rsrc1,rsrc2,rsrc3,rfwren,asrc,shdatac,shtypec,fset,aw,bw,aluop1c,rew: std_logic;
+signal pw,iord,iw,dw,rsrc1,rsrc2,rsrc3,rfwren,asrc,shdatac,shtypec,fset,aw,bw,aluop1c,rew: std_logic;
 signal bsrc,aluop2c,shamtc,resultc: std_logic_vector(1 downto 0);
 signal aluop: std_logic_vector(3 downto 0);
 signal pminstr,pmbyte: std_logic_vector(2 downto 0);
@@ -214,6 +214,7 @@ instr <= instruction(27 downto 20) & instruction(11 downto 4);
 process (clk)
 begin
     if state=fetch then
+        -- MR=1 is to be done here.
         pw <= '1';
         rfwren <= '0';
         rew <= '0';
@@ -221,13 +222,13 @@ begin
         state <= readreg;
     elsif state=readreg then
         pw <= '0';
-        idw <= '1';
+        iw <= '1';
         rsrc1 <= '1';
         rsrc2 <= '1';
         rsrc3 <= '1';
         state <= decode;
     elsif state=decode then
-        idw <= '0';
+        iw <= '0';
         if instr_type="00" then
             if instr_variant='0' then
                 state <= arith_imm;
@@ -235,7 +236,11 @@ begin
                 state <= arith_reg;
             end if;
         elsif instr_type="01" then
-            state <= dt;
+            if instr_variant='1' then
+                state <= dt_reg;
+            else
+                state <= dt_imm;
+            end if;
         elsif instr_type="10" then
             rsrc1 <= '0';
             rsrc3 <= '0';
@@ -320,7 +325,52 @@ begin
         aluop <= "0100";
         resultc <= "01";
         state <= writerf;
+    elsif state=dt_imm then
+        aw <= '1';
+        asrc <= '1';
+        bsrc <= "10";
+        aluop1c <= '0';
+        aluop2c <= "10";
+        if instruction(23)='1' then
+            aluop <= "0100";
+        else
+            aluop <= "0110";
+        end if;
+        -- Do something for next state
+        state <= dt;
+    elsif state=dt_reg then
+        bw <= '1';
+        bsrc <= "00";
+        shdatac <= '0';
+        shamtc <= "00";
+        shtypec <= '0';
+        resultc <= "10";
+        rew <='1';
+        state <= dt_alu;
+    elsif state=dt_alu then
+        aw <= '1';
+        rew <= '0';
+        aluop1c <= '0';
+        aluop2c <= "01";
+        if instruction(23)='1' then
+            aluop <= "0100";
+        else
+            aluop <= "0110";
+        end if;
+        resultc <= "01";
+        -- Do something for next state
+        state <= dt;
     elsif state=dt then
+        if instr_class="000" or instr_class="010" or instr_class="100" then
+            rew <= '1';
+            iord <= '1';
+            iw <= '0';
+            dw <= '0';
+            state <= load;
+        else
+            rsrc2 <= '0';
+            state <= store;
+        end if;
     elsif state=brn then
         asrc <= '0';
         bsrc <= "11";
@@ -334,7 +384,19 @@ begin
             state <= pcincr;
         end if;
     elsif state=load then
+        dw <= '1';
+        pminstr <= "000"; -- Supports only ldr presently
+        pmbyte <= "000"; -- No need presently
+        resultc <= "10";
+        state <= writerf;
     elsif state=store then
+        bw <= '1';
+        bsrc <= "00";
+        resultc <= "10";
+        rew <= '1';
+        iord <= '1';
+        pminstr <= "101";
+        state <= pcincr;
     elsif state=writerf then
         rew <= '1';
         if instr_type="00" and 
@@ -366,6 +428,72 @@ begin
         state <= fetch;
     end if;
 end process;
+
+control(0) <= pw;
+control(1) <= iord;
+control(2) <= iw;
+control(3) <= dw;
+control(4) <= rsrc1;
+control(5) <= rsrc2;
+control(6) <= rsrc3;
+control(7) <= rfwren;
+control(8) <= asrc;
+control(10 downto 9) <= bsrc(1 downto 0);
+control(11) <= aw;
+control(12) <= bw;
+control(13) <= aluop1c; 
+control(15 downto 14) <= aluop2c(1 downto 0); 
+control(19 downto 16) <= aluop(3 downto 0);
+control(20) <= shdatac;
+control(22 downto 21) <= shamtc(1 downto 0);
+control(23) <= shtypec;
+control(26 downto 24) <= pminstr;
+control(29 downto 27) <= pmbyte;
+control(30) <= fset;
+control(31) <= rew;
+control(33 downto 32) <= resultc(1 downto 0);
+
 end Behavioral;
 
 ----------------------------------------------------------------------------------
+
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+
+-- Uncomment the following library declaration if using
+-- arithmetic functions with Signed or Unsigned values
+--use IEEE.NUMERIC_STD.ALL;
+
+-- Uncomment the following library declaration if instantiating
+-- any Xilinx leaf cells in this code.
+--library UNISIM;
+--use UNISIM.VComponents.all;
+
+entity common is
+  Port (
+  clk: in std_logic );
+end common;
+
+architecture Behavioral of common is
+signal controls: std_logic_vector(33 downto 0);
+signal instruction: std_logic_vector(31 downto 0);
+signal wren,flags: std_logic_vector(3 downto 0);
+begin
+datapath: entity work.main
+    Port map (
+        control => controls,
+        clk => clk,  
+        instr => instruction,
+        wren_mem => wren,
+        flags => flags
+    );
+
+controller: entity work.controller
+    Port map (
+        clk => clk,
+        instruction => instruction,
+        flags => flags,
+        control => controls
+    );
+
+end Behavioral;

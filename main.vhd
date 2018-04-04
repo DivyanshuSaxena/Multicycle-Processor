@@ -607,29 +607,30 @@ use IEEE.STD_LOGIC_1164.ALL;
 
 entity main is
   Port (
-  pw: in std_logic;
-  iord: in std_logic;
-  mwdc: in std_logic;
-  idw: in std_logic;
-  rsrc1: in std_logic;
-  rsrc2: in std_logic;
-  rsrc3: in std_logic;
-  rfwren: in std_logic;
-  asrc: in std_logic;
-  bsrc: in std_logic_vector(1 downto 0);
-  aw: in std_logic;
-  bw: in std_logic;
-  aluop1c: in std_logic; 
-  aluop2c: in std_logic_vector(1 downto 0); 
-  aluop: in std_logic_vector(3 downto 0);
-  shdatac: in std_logic;
-  shamtc: in std_logic_vector(1 downto 0);
-  shtypec: in std_logic;
-  pminstr: in std_logic_vector(2 downto 0);
-  pmbyte: in std_logic_vector(2 downto 0);
-  fset: in std_logic;
-  rew: in std_logic;
-  resultc: in std_logic_vector(1 downto 0);
+--   pw: in std_logic;
+--   iord: in std_logic;
+--   iw: in std_logic;
+--   dw: in std_logic;
+--   rsrc1: in std_logic;
+--   rsrc2: in std_logic;
+--   rsrc3: in std_logic;
+--   rfwren: in std_logic;
+--   asrc: in std_logic;
+--   bsrc: in std_logic_vector(1 downto 0);
+--   aw: in std_logic;
+--   bw: in std_logic;
+--   aluop1c: in std_logic; 
+--   aluop2c: in std_logic_vector(1 downto 0); 
+--   aluop: in std_logic_vector(3 downto 0);
+--   shdatac: in std_logic;
+--   shamtc: in std_logic_vector(1 downto 0);
+--   shtypec: in std_logic;
+--   pminstr: in std_logic_vector(2 downto 0);
+--   pmbyte: in std_logic_vector(2 downto 0);
+--   fset: in std_logic;
+--   rew: in std_logic;
+--   resultc: in std_logic_vector(1 downto 0);
+  control: in std_logic_vector(33 downto 0);
   clk: in std_logic;
   instr: out std_logic_vector(31 downto 0);
   wren_mem: out std_logic_vector(3 downto 0);
@@ -637,6 +638,11 @@ entity main is
 end main;
 
 architecture Behavioral of main is
+-- Control Signals
+signal pw,iord,iw,dw,rsrc1,rsrc2,rsrc3,rfwren,asrc,shdatac,shtypec,fset,aw,bw,aluop1c,rew: std_logic;
+signal bsrc,aluop2c,shamtc,resultc: std_logic_vector(1 downto 0);
+signal aluop: std_logic_vector(3 downto 0);
+signal pminstr,pmbyte: std_logic_vector(2 downto 0);
 -- ALU
 signal aluop1, aluop2, aluout: std_logic_vector(31 downto 0);
 signal alufl: std_logic_vector(3 downto 0);
@@ -722,7 +728,7 @@ ir: entity work.registr
     Port map (
     input => mout,
     clk => clk,
-    wren => idw,
+    wren => iw,
     output => instruction);
 
 dr: entity work.registr
@@ -759,14 +765,7 @@ memad: entity work.multi2plex32
     input2 => resout,
     selector => iord,
     output => mad);
-    
-memwd: entity work.multi2plex32
-    Port map (
-    input1 => bout,
-    input2 => resout,
-    selector => mwdc,
-    output => mwd);
-    
+        
 rfrad1: entity work.multi2plex4
     Port map (
     input1 => instruction(11 downto 8),
@@ -880,6 +879,32 @@ bram: entity work.bram_wrapper
 ext4 <= instruction(11 downto 8) & '0';
 wren_mem(3 downto 0) <= memwren(3 downto 0);
 instr <= instruction;
-dw <= '1' when idw='0' else '0';
+
+-- Control Signals
+
+pw <= control(0);
+control(1) <= iord;
+control(2) <= iw;
+control(3) <= dw;
+control(4) <= rsrc1;
+control(5) <= rsrc2;
+control(6) <= rsrc3;
+control(7) <= rfwren;
+control(8) <= asrc;
+control(10 downto 9) <= bsrc(1 downto 0);
+control(11) <= aw;
+control(12) <= bw;
+control(13) <= aluop1c; 
+control(15 downto 14) <= aluop2c(1 downto 0); 
+control(19 downto 16) <= aluop(3 downto 0);
+control(20) <= shdatac;
+control(22 downto 21) <= shamtc(1 downto 0);
+control(23) <= shtypec;
+control(26 downto 24) <= pminstr: in std_logic_vector(2 downto 0);
+control(29 downto 27) <= pmbyte: in std_logic_vector(2 downto 0);
+control(30) <= fset;
+control(31) <= rew;
+control(33 downto 32) <= resultc(1 downto 0);
+
 end Behavioral;
 ----------------------------------------------------------------------------------
