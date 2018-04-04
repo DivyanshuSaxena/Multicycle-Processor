@@ -287,8 +287,10 @@ entity multiplier is
 end multiplier;
 
 architecture Behavioral of multiplier is
+signal temp: std_logic_vector(63 downto 0);
 begin
-output(31 downto 0) <= std_logic_vector(signed(operand1(31 downto 0)) * signed(operand2(31 downto 0)));
+temp(63 downto 0) <= std_logic_vector(signed(operand1(31 downto 0)) * signed(operand2(31 downto 0)));
+output(31 downto 0) <= temp(31 downto 0);
 end Behavioral;
 
 ----------------------------------------------------------------------------------
@@ -663,13 +665,14 @@ signal rd1,rd2,wd,rfpc: std_logic_vector(31 downto 0);
 signal mad,mout: std_logic_vector(31 downto 0);
 -- Registers
 signal instruction,aout,bout,result,resout: std_logic_vector(31 downto 0);
-signal dw: std_logic;
 -- Multiplexers
 signal data1,data2: std_logic_vector(31 downto 0);
 -- Extension and sign ext
 signal ext8out,ext12out,signextout: std_logic_vector(31 downto 0);
 signal memwren: std_logic_vector(3 downto 0);
 signal ext4: std_logic_vector(4 downto 0);
+-- Temporary Signal
+signal instr_temp: std_logic_vector(31 downto 0);
 begin
 alu: entity work.alu
     Port map (
@@ -729,7 +732,7 @@ ir: entity work.registr
     input => mout,
     clk => clk,
     wren => iw,
-    output => instruction);
+    output => instr_temp);
 
 dr: entity work.registr
     Port map (
@@ -905,6 +908,7 @@ pmbyte <= control(29 downto 27);
 fset <= control(30) ;
 rew <= control(31);
 resultc(1 downto 0) <= control(33 downto 32) ;
+instruction(31 downto 0) <= "11100010100000000001000000011100";
 
 end Behavioral;
 ----------------------------------------------------------------------------------

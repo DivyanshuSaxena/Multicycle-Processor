@@ -37,15 +37,15 @@ instr_type <= "00" when instr(15 downto 14)="00" and (instr(13)='1' or instr(3)=
               "10" when instr(15 downto 14)="00" and instr(3 downto 1)="100" else   -- mul or mla
               "11"; -- b
 instr_class <= "000" when (instr(15 downto 14)="01" and instr(10)='0' and instr(8)='1') or 
-                        (instr(15 downto 14)="00" and (instr(13)='1' or instr(3)='0' or instr(0)='0') and instr(24 downto 21)="1000") or
+                        (instr(15 downto 14)="00" and (instr(13)='1' or instr(3)='0' or instr(0)='0') and instr(12 downto 9)="1000") or
                         (instr(15 downto 14)="00" and instr(3 downto 1)="100" and instr(9)='0') else    -- ldr or tst or simple mul 
                "001" when (instr(15 downto 14)="01" and instr(10)='0' and instr(8)='0') or 
-                        (instr(15 downto 14)="00" and (instr(13)='1' or instr(3)='0' or instr(0)='0') and instr(24 downto 21)="1001") or
+                        (instr(15 downto 14)="00" and (instr(13)='1' or instr(3)='0' or instr(0)='0') and instr(12 downto 9)="1001") or
                         (instr(15 downto 14)="00" and instr(3 downto 1)="100" and instr(9)='1') else    -- str or teq or mla
                "010" when (instr(15 downto 14)="00" and instr(3)='1' and not instr(2 downto 1)="00" and instr(8)='1') or 
-                        (instr(15 downto 14)="00" and (instr(13)='1' or instr(3)='0' or instr(0)='0') and instr(24 downto 21)="1010") else    -- ldrh or cmp
+                        (instr(15 downto 14)="00" and (instr(13)='1' or instr(3)='0' or instr(0)='0') and instr(12 downto 9)="1010") else    -- ldrh or cmp
                "011" when (instr(15 downto 14)="00" and instr(3)='1' and not instr(2 downto 1)="00" and instr(8)='0') or 
-                        (instr(15 downto 14)="00" and (instr(13)='1' or instr(3)='0' or instr(0)='0') and instr(24 downto 21)="1011") else    -- strh or cmn
+                        (instr(15 downto 14)="00" and (instr(13)='1' or instr(3)='0' or instr(0)='0') and instr(12 downto 9)="1011") else    -- strh or cmn
                "100" when ((instr(15 downto 14)="01" and instr(10)='1') and instr(8)='1') else    -- ldrb
                "101" when (instr(15 downto 14)="01" and instr(10)='1') and instr(8)='0';    -- strb  
                -- Do something for ldrsb and ldrsh
