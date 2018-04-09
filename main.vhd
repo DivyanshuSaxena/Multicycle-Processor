@@ -632,7 +632,7 @@ entity main is
 --   fset: in std_logic;
 --   rew: in std_logic;
 --   resultc: in std_logic_vector(1 downto 0);
-  control: in std_logic_vector(33 downto 0);
+  control: in std_logic_vector(34 downto 0);
   clk: in std_logic;
   instr: out std_logic_vector(31 downto 0);
   wren_mem: out std_logic_vector(3 downto 0);
@@ -661,6 +661,7 @@ signal tom,from,top: std_logic_vector(31 downto 0);
 -- Register File
 signal rad1,rad2,wad: std_logic_vector(3 downto 0);
 signal rd1,rd2,wd,rfpc: std_logic_vector(31 downto 0);
+signal rf_reset: std_logic;
 -- Memory
 signal mad,mout: std_logic_vector(31 downto 0);
 -- Registers
@@ -704,7 +705,7 @@ rf: entity work.register_file
     addr2 => rad2,
     write_addr => wad,
     clock => clk,
-    reset => '0',
+    reset => rf_reset,
     wren => rfwren,
     output1 => rd1,
     output2 => rd2,
@@ -908,6 +909,7 @@ pmbyte <= control(29 downto 27);
 fset <= control(30) ;
 rew <= control(31);
 resultc(1 downto 0) <= control(33 downto 32) ;
+rf_reset <= control(34);
 instruction(31 downto 0) <= "11100010100000000001000000011100";
 
 end Behavioral;

@@ -230,7 +230,8 @@ begin
     elsif state=decode then
         iw <= '0';
         if instr_type="00" then
-            if instr_variant='0' then
+            report std_logic'image(instr_variant);
+            if instr_variant='1' then
                 state <= arith_imm;
             else
                 state <= arith_reg;
@@ -479,10 +480,12 @@ architecture Behavioral of common is
 signal controls: std_logic_vector(33 downto 0);
 signal instruction: std_logic_vector(31 downto 0);
 signal wren,flags: std_logic_vector(3 downto 0);
+signal rfreset: std_logic;
+signal control_with_reset: std_logic_vector(34 downto 0);
 begin
 datapath: entity work.main
     Port map (
-        control => controls,
+        control => control_with_reset,
         clk => clk,  
         instr => instruction,
         wren_mem => wren,
@@ -497,4 +500,5 @@ controller: entity work.controller
         control => controls
     );
 
+control_with_reset(34 downto 0) <= rfreset & controls(33 downto 0);
 end Behavioral;
