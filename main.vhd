@@ -866,7 +866,7 @@ rfrd1: entity work.multi2plex32
 rfrd2: entity work.multi4plex32
     Port map (
     input1 => bout,
-    input2 => "00000000000000000000000000000100",
+    input2 => "00000000000000000000000000000001",
     input3 => ext12out,
     input4 => signextout,
     selector => bsrc,

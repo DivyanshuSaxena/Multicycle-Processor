@@ -193,7 +193,7 @@ signal instr_variant,instr_shift: std_logic;
 signal pred: std_logic := '1';
 signal predication,undef: std_logic;
 -- state signals
-signal init: std_logic_vector(1 downto 0) := "00";
+signal init: std_logic := '0';
 begin
 
 decoder: entity work.inst_decoder
@@ -219,21 +219,21 @@ begin
 if rising_edge(clk) then
     if state=fetch then
         -- MR=1 is to be done here.
-        pw <= '1';
         rfwren <= '0';
         mr <= '1';
-        if init="00" then
-            rsrc4 <= '1';
-            init <= "01";
-        elsif init <= "01" then
-            init <= "10";
-            rsrc4 <= '0';
-        else
-            rsrc4 <= '0';
+        if init='0' then
+            -- rsrc4 <= '1';
+            init <= '1';
+        -- elsif init <= "01" then
+        --     init <= "10";
+        --     rsrc4 <= '0';
+        -- else
+        --     rsrc4 <= '0';
         end if;
-        iord <= '0';
+        rsrc4 <= '0';        
         rew <= '0';        
         iw <= '1';
+        pw <= '0';
     --     state <= fetch_wait_1;
     -- elsif state=fetch_wait_1 then
     --     pw <= '0';    
@@ -243,7 +243,6 @@ if rising_edge(clk) then
     --     state <= readreg;
         state <= readreg;
     elsif state=readreg then
-        pw <= '0';
         mr <= '0';
         rsrc1 <= '1';
         rsrc2 <= '1';
@@ -277,7 +276,7 @@ if rising_edge(clk) then
         (instr_class="000" or instr_class="001" or instr_class="010" or instr_class="011") then
             -- If cmp/cmn/tst/teq
             predication <= '0';
-        elsif init="01" then
+        elsif init='1' then
             predication <= '1';
         else
             predication <= pred;
@@ -407,14 +406,15 @@ if rising_edge(clk) then
         end if;
     elsif state=brn then
         asrc <= '0';
-        bsrc <= "11";
         aluop1c <= '0';
         aluop2c <= "10";
         aluop <= "0100";
         resultc <= "01";
         if pred='1' then
+            bsrc <= "11";
             state <= pcupdate;
         else
+            bsrc <= "01";        
             state <= pcincr;
         end if;
     elsif state=load then
@@ -440,22 +440,26 @@ if rising_edge(clk) then
             rsrc3 <= '1';
             rsrc4 <= '0';            
         end if;
-        state <= pcincr;
-    elsif state=pcincr then
-        rew <= '1';
-        rfwren <= '1';
-        rsrc4 <= '1';
         asrc <= '0';
         bsrc <= "01";
         aluop1c <= '0';
         aluop2c <= "10";
         aluop <= "0100";
         resultc <= "01";
+        state <= pcincr;
+    elsif state=pcincr then
+        rew <= '1';
+        rfwren <= '1';
+        rsrc4 <= '1';
+        pw <= '1';
+        iord <= '0';
         state <= fetch;
     elsif state=pcupdate then
         rew <= '1';
         rfwren <= '1';
         rsrc4 <= '1';
+        pw <= '1';
+        iord <= '0';
         state <= fetch;
     end if;
 end if;
