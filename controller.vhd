@@ -191,9 +191,9 @@ signal instr_class: std_logic_vector(2 downto 0);
 signal instr_variant,instr_shift: std_logic;
 -- map flag_check
 signal pred: std_logic := '1';
-signal undef: std_logic;
+signal predication,undef: std_logic;
 -- state signals
-signal init: std_logic := '0';
+signal init: std_logic_vector(1 downto 0) := "00";
 begin
 
 decoder: entity work.inst_decoder
@@ -213,6 +213,7 @@ flag_control: entity work.flag_check
     );
 
 instr <= instruction(27 downto 20) & instruction(11 downto 4);
+
 process (clk)
 begin
 if rising_edge(clk) then
@@ -221,14 +222,18 @@ if rising_edge(clk) then
         pw <= '1';
         rfwren <= '0';
         mr <= '1';
-        if init='0' then
+        if init="00" then
             rsrc4 <= '1';
-            init <= '1';
+            init <= "01";
+        elsif init <= "01" then
+            init <= "10";
+            rsrc4 <= '0';
         else
             rsrc4 <= '0';
         end if;
         iord <= '0';
         rew <= '0';        
+        iw <= '1';
     --     state <= fetch_wait_1;
     -- elsif state=fetch_wait_1 then
     --     pw <= '0';    
@@ -239,7 +244,7 @@ if rising_edge(clk) then
         state <= readreg;
     elsif state=readreg then
         pw <= '0';
-        iw <= '1';
+        mr <= '0';
         rsrc1 <= '1';
         rsrc2 <= '1';
         rsrc3 <= '1';
@@ -247,7 +252,6 @@ if rising_edge(clk) then
         state <= decode;
     elsif state=decode then
         iw <= '0';
-        mr <= '0';
         if instr_type="00" then
             -- report std_logic'image(instr_variant);
             if instr_variant='1' then
@@ -268,6 +272,15 @@ if rising_edge(clk) then
             state <= mul;
         else
             state <= brn;
+        end if;
+        if instr_type="00" and 
+        (instr_class="000" or instr_class="001" or instr_class="010" or instr_class="011") then
+            -- If cmp/cmn/tst/teq
+            predication <= '0';
+        elsif init="01" then
+            predication <= '1';
+        else
+            predication <= pred;
         end if;
     elsif state=arith_imm then
         aw <= '1';
@@ -313,13 +326,7 @@ if rising_edge(clk) then
         aluop2c <= "01";
         aluop <= instruction(24 downto 21);
         resultc <= "01";
-        if instr_type="00" and 
-        (instr_class="000" or instr_class="001" or instr_class="010" or instr_class="011") then
-            -- If cmp/cmn/tst/teq
-            rfwren <= '0';
-        else
-            rfwren <= pred;
-        end if;
+        rfwren <= predication;
         state <= writerf;
     elsif state=mul then
         aw <= '1';
@@ -328,13 +335,7 @@ if rising_edge(clk) then
         bsrc <= "00";
         resultc <= "00";
         if instr_class="000" then
-            if instr_type="00" and 
-            (instr_class="000" or instr_class="001" or instr_class="010" or instr_class="011") then
-                -- If cmp/cmn/tst/teq
-                rfwren <= '0';
-            else
-                rfwren <= pred;
-            end if;
+            rfwren <= predication;    
             state <= writerf;
         else
             state <= mla;
@@ -353,13 +354,7 @@ if rising_edge(clk) then
         aluop2c <= "10";
         aluop <= "0100";
         resultc <= "01";
-        if instr_type="00" and 
-        (instr_class="000" or instr_class="001" or instr_class="010" or instr_class="011") then
-            -- If cmp/cmn/tst/teq
-            rfwren <= '0';
-        else
-            rfwren <= pred;
-        end if;
+        rfwren <= predication;        
         state <= writerf;
     elsif state=dt_imm then
         aw <= '1';
@@ -428,6 +423,7 @@ if rising_edge(clk) then
         pmbyte <= "000"; -- No need presently
         resultc <= "10";
         rfwren <= pred;
+        rfwren <= predication;  
         state <= writerf;
     elsif state=store then
         rew <= '0';

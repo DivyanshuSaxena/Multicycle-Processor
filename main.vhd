@@ -525,9 +525,9 @@ signal memory: memory_type  := ("11100011101000000010000000000011", "11100011101
 begin
     process(clk)
     begin
-        if mr='1' and rising_edge(clk) then
+        if mr='1' then
             dout(31 downto 0) <= memory(conv_integer(addr(3 downto 0)))(31 downto 0);
-        elsif not wren="0000" and rising_edge(clk) then
+        elsif not wren="0000" then
             if wren(0)='1' then
                 memory(conv_integer(addr(3 downto 0)))(7 downto 0) <= din(7 downto 0);
             else
@@ -567,7 +567,7 @@ end multi2plex4;
 
 architecture Behavioral of multi2plex4 is
 begin
-    output(3 downto 0) <= input1(3 downto 0) when selector='1' else input2(3 downto 0);
+    output(3 downto 0) <= input1(3 downto 0) when selector='0' else input2(3 downto 0);
 end Behavioral;
 
 ----------------------------------------------------------------------------------
@@ -585,7 +585,7 @@ end multi2plex32;
 
 architecture Behavioral of multi2plex32 is
 begin
-    output(31 downto 0) <= input1(31 downto 0) when selector='1' else input2(31 downto 0);
+    output(31 downto 0) <= input1(31 downto 0) when selector='0' else input2(31 downto 0);
 end Behavioral;
 
 ----------------------------------------------------------------------------------
@@ -603,7 +603,7 @@ end multi2plex2;
 
 architecture Behavioral of multi2plex2 is
 begin
-    output(1 downto 0) <= input1(1 downto 0) when selector='1' else input2(1 downto 0);
+    output(1 downto 0) <= input1(1 downto 0) when selector='0' else input2(1 downto 0);
 end Behavioral;
 
 ----------------------------------------------------------------------------------
