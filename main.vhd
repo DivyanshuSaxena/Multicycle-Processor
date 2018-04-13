@@ -307,13 +307,16 @@ entity registr is
 end registr;
 
 architecture Behavioral of registr is
+signal temp: std_logic_vector(31 downto 0) := (others => '0');
 begin
     process(clk)
     begin
-        if(wren='1') then
-            output(31 downto 0) <= input(31 downto 0);
+        if(wren='1' and rising_edge(clk)) then
+            temp(31 downto 0) <= input(31 downto 0);
         end if;
     end process;
+
+    output(31 downto 0) <= temp(31 downto 0);
 end Behavioral;
 
 ----------------------------------------------------------------------------------
@@ -346,11 +349,11 @@ entity register_file is
 end register_file;
 
 architecture Behavioral of register_file is
-type arr1 is array(0 to 15) of std_logic_vector(31 downto 0);
+type arr1 is array(0 to 14) of std_logic_vector(31 downto 0);
 type arr2 is array(0 to 15) of std_logic;
 signal outputarr: arr1;
 signal inputarr: arr2;
-signal writepc: std_logic_vector(31 downto 0);
+signal writepc,pctemp: std_logic_vector(31 downto 0);
 begin
 registerloop: for i in 0 to 14 generate
     registr: entity work.registr
@@ -366,26 +369,30 @@ regpc: entity work.registr
     clk => clock,
     input => writepc,
     wren => inputarr(15),
-    output => outputarr(15) );
+    output => pctemp );
 
 iterate: for i in 0 to 14 generate
     inputarr(i) <= '1' when i=conv_integer(write_addr(3 downto 0)) else '0';
 end generate;
 
+writepc <= "00000000000000000000000000000000" when reset='1' else write_data;
+inputarr(15) <= '1' when (not reset='1' and write_addr(3 downto 0)="1111") else '0';
 output1 <= outputarr(conv_integer(addr1(3 downto 0)));
 output2 <= outputarr(conv_integer(addr2(3 downto 0)));
-pc <= outputarr(15);
+pc(31 downto 0) <= pctemp(31 downto 0);
 
-process(reset,write_addr)
-begin
-    if(reset='1') then
-        writepc <= "00000000000000000000000000000000";
-        inputarr(15) <= '1';
-    elsif (write_addr(3 downto 0)="1111") then
-        writepc <= write_data;
-        inputarr(15) <= '1'; 
-    end if;
-end process;
+-- process(reset,write_addr)
+-- begin
+--     if(reset='1') then
+--         writepc <= "00000000000000000000000000000000";
+--         inputarr(15) <= '1';
+--     elsif (write_addr(3 downto 0)="1111") then
+--         writepc <= write_data;
+--         inputarr(15) <= '1'; 
+--     else
+--         inputarr(15) <= '0';
+--     end if;
+-- end process;
 
 end Behavioral;
 
@@ -490,7 +497,59 @@ begin
                            from_proc(7 downto 0)&from_proc(7 downto 0)&from_proc(7 downto 0)&from_proc(7 downto 0);
                            
     mem_wren(3 downto 0) <= "0001" when instr_type="010" else "0011";
-                   
+end Behavioral;
+
+----------------------------------------------------------------------------------
+
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+
+-- Uncomment the following library declaration if using
+-- arithmetic functions with Signed or Unsigned values
+use IEEE.NUMERIC_STD.ALL;
+use IEEE.STD_LOGIC_UNSIGNED.ALL;
+
+entity ram is
+  Port (
+  clk: in std_logic;
+  addr: in std_logic_vector(31 downto 0);
+  din: in std_logic_vector(31 downto 0);
+  mr: in std_logic;
+  wren: in std_logic_vector(3 downto 0);
+  dout: out std_logic_vector(31 downto 0) );
+end ram;
+
+architecture Behavioral of ram is
+type memory_type is array(0 to 1024) of std_logic_vector(31 downto 0);
+signal memory: memory_type  := ("11100011101000000010000000000011", "11100011101000000011000000000111", "11100000100000100001000000000011", "11100101100100100001000000000001", "11100000010000100001000000000011", others => (others => '0'));
+begin
+    process(clk)
+    begin
+        if mr='1' and rising_edge(clk) then
+            dout(31 downto 0) <= memory(conv_integer(addr(3 downto 0)))(31 downto 0);
+        elsif not wren="0000" and rising_edge(clk) then
+            if wren(0)='1' then
+                memory(conv_integer(addr(3 downto 0)))(7 downto 0) <= din(7 downto 0);
+            else
+                memory(conv_integer(addr(3 downto 0)))(7 downto 0) <= "00000000";
+            end if;
+            if wren(1)='1' then
+                memory(conv_integer(addr(3 downto 0)))(15 downto 8) <= din(15 downto 8);
+            else
+                memory(conv_integer(addr(3 downto 0)))(15 downto 8) <= "00000000";
+            end if;
+            if wren(2)='1' then
+                memory(conv_integer(addr(3 downto 0)))(23 downto 16) <= din(23 downto 16);
+            else
+                memory(conv_integer(addr(3 downto 0)))(23 downto 16) <= "00000000";
+            end if;
+            if wren(3)='1' then
+                memory(conv_integer(addr(3 downto 0)))(31 downto 24) <= din(31 downto 24);
+            else
+                memory(conv_integer(addr(3 downto 0)))(31 downto 24) <= "00000000";
+            end if;
+        end if;
+    end process;
 end Behavioral;
 
 ----------------------------------------------------------------------------------
@@ -632,7 +691,7 @@ entity main is
 --   fset: in std_logic;
 --   rew: in std_logic;
 --   resultc: in std_logic_vector(1 downto 0);
-  control: in std_logic_vector(34 downto 0);
+  control: in std_logic_vector(36 downto 0);
   clk: in std_logic;
   instr: out std_logic_vector(31 downto 0);
   wren_mem: out std_logic_vector(3 downto 0);
@@ -641,13 +700,12 @@ end main;
 
 architecture Behavioral of main is
 -- Control Signals
-signal pw,iord,iw,dw,rsrc1,rsrc2,rsrc3,rfwren,asrc,shdatac,shtypec,fset,aw,bw,aluop1c,rew: std_logic;
+signal pw,iord,iw,dw,rsrc1,rsrc2,rsrc3,rsrc4,rfwren,asrc,shdatac,shtypec,fset,aw,bw,aluop1c,rew,mr: std_logic;
 signal bsrc,aluop2c,shamtc,resultc: std_logic_vector(1 downto 0);
 signal aluop: std_logic_vector(3 downto 0);
 signal pminstr,pmbyte: std_logic_vector(2 downto 0);
 -- ALU
 signal aluop1, aluop2, aluout: std_logic_vector(31 downto 0);
-signal alufl: std_logic_vector(3 downto 0);
 signal alucarry: std_logic;
 -- Shifter
 signal shdata,shout: std_logic_vector(31 downto 0);
@@ -659,13 +717,13 @@ signal multop1,multop2,multout: std_logic_vector(31 downto 0);
 -- P-M Path
 signal tom,from,top: std_logic_vector(31 downto 0);
 -- Register File
-signal rad1,rad2,wad: std_logic_vector(3 downto 0);
+signal rad1,rad2,wad,wrad: std_logic_vector(3 downto 0);
 signal rd1,rd2,wd,rfpc: std_logic_vector(31 downto 0);
 signal rf_reset: std_logic;
 -- Memory
 signal mad,mout: std_logic_vector(31 downto 0);
 -- Registers
-signal instruction,aout,bout,result,resout: std_logic_vector(31 downto 0);
+signal instruction,aout,bout,result,resout,pcout: std_logic_vector(31 downto 0);
 -- Multiplexers
 signal data1,data2: std_logic_vector(31 downto 0);
 -- Extension and sign ext
@@ -682,7 +740,7 @@ alu: entity work.alu
     operation => aluop,
     carry => alucarry,
     output => aluout,
-    flag => alufl);
+    flag => flags);
 
 multi: entity work.multiplier
     Port map (
@@ -703,7 +761,7 @@ rf: entity work.register_file
     write_data => resout,
     addr1 => rad1,
     addr2 => rad2,
-    write_addr => wad,
+    write_addr => wrad,
     clock => clk,
     reset => rf_reset,
     wren => rfwren,
@@ -726,14 +784,14 @@ pc: entity work.registr
     input => rfpc,
     clk => clk,
     wren => pw,
-    output => rfpc);
+    output => pcout);
     
 ir: entity work.registr
     Port map (
     input => mout,
     clk => clk,
     wren => iw,
-    output => instr_temp);
+    output => instruction);
 
 dr: entity work.registr
     Port map (
@@ -765,7 +823,7 @@ res: entity work.registr
     
 memad: entity work.multi2plex32
     Port map (
-    input1 => rfpc,
+    input1 => pcout,
     input2 => resout,
     selector => iord,
     output => mad);
@@ -790,10 +848,17 @@ rfrad3: entity work.multi2plex4
     input2 => instruction(15 downto 12),
     selector => rsrc3,
     output => wad);
+
+rfrad4: entity work.multi2plex4
+    Port map (
+    input1 => wad,
+    input2 => "1111",
+    selector => rsrc4,
+    output => wrad);
     
 rfrd1: entity work.multi2plex32
     Port map (
-    input1 => rfpc,
+    input1 => pcout,
     input2 => aout,
     selector => asrc,
     output => data1);
@@ -870,15 +935,24 @@ resselect: entity work.multi4plex32
     selector => resultc,
     output => result);
     
-bram: entity work.bram_wrapper
+ram: entity work.ram
     Port map (
-    bram_porta_addr => mad,
-    bram_porta_clk => clk,
-    bram_porta_din => tom,
-    bram_porta_dout => mout,
-    bram_porta_en => '1',
-    bram_porta_rst => '0',
-    bram_porta_we => memwren);
+    addr => mad,
+    clk => clk,
+    din => tom,
+    dout => mout,
+    mr => mr,
+    wren => memwren);
+
+-- bram: entity work.bram_wrapper
+--     Port map (
+--     bram_porta_addr => mad,
+--     bram_porta_clk => clk,
+--     bram_porta_din => tom,
+--     bram_porta_dout => mout,
+--     bram_porta_en => '1',
+--     bram_porta_rst => '0',
+--     bram_porta_we => memwren);
     
 ext4 <= instruction(11 downto 8) & '0';
 wren_mem(3 downto 0) <= memwren(3 downto 0);
@@ -909,8 +983,10 @@ pmbyte <= control(29 downto 27);
 fset <= control(30) ;
 rew <= control(31);
 resultc(1 downto 0) <= control(33 downto 32) ;
-rf_reset <= control(34);
-instruction(31 downto 0) <= "11100010100000000001000000011100";
+rsrc4 <= control(34);
+mr <= control(35);
+rf_reset <= control(36);
+--instruction(31 downto 0) <= "11100010100000000001000000011100";
 
 end Behavioral;
 ----------------------------------------------------------------------------------

@@ -171,17 +171,16 @@ entity controller is
   clk: in std_logic;
   instruction: in std_logic_vector(31 downto 0);
   flags: in std_logic_vector(3 downto 0);
-  control: out std_logic_vector(33 downto 0) );
+  control: out std_logic_vector(35 downto 0) );
 end controller;
 
 architecture Behavioral of controller is
 -- fsm
-type state_type is (fetch, readreg, decode, arith_imm, arith_reg, arith_sh_imm, arith_sh_reg,
+type state_type is (fetch, fetch_wait_1, fetch_wait_2, readreg, decode, arith_imm, arith_reg, arith_sh_imm, arith_sh_reg,
 alu, mul, mla, mla_alu, dt_imm, dt_reg, dt_alu, dt, brn, load, store, writerf, pcincr, pcupdate);
 signal state: state_type;
-signal state_out: std_logic_vector(3 downto 0);
 -- control signals
-signal pw,iord,iw,dw,rsrc1,rsrc2,rsrc3,rfwren,asrc,shdatac,shtypec,fset,aw,bw,aluop1c,rew: std_logic;
+signal pw,iord,iw,dw,rsrc1,rsrc2,rsrc3,rsrc4,rfwren,asrc,shdatac,shtypec,fset,aw,bw,aluop1c,rew,mr: std_logic;
 signal bsrc,aluop2c,shamtc,resultc: std_logic_vector(1 downto 0);
 signal aluop: std_logic_vector(3 downto 0);
 signal pminstr,pmbyte: std_logic_vector(2 downto 0);
@@ -191,7 +190,10 @@ signal instr_type: std_logic_vector(1 downto 0);
 signal instr_class: std_logic_vector(2 downto 0);
 signal instr_variant,instr_shift: std_logic;
 -- map flag_check
-signal pred,undef: std_logic;
+signal pred: std_logic := '1';
+signal undef: std_logic;
+-- state signals
+signal init: std_logic := '0';
 begin
 
 decoder: entity work.inst_decoder
@@ -213,12 +215,27 @@ flag_control: entity work.flag_check
 instr <= instruction(27 downto 20) & instruction(11 downto 4);
 process (clk)
 begin
+if rising_edge(clk) then
     if state=fetch then
         -- MR=1 is to be done here.
         pw <= '1';
         rfwren <= '0';
-        rew <= '0';
+        mr <= '1';
+        if init='0' then
+            rsrc4 <= '1';
+            init <= '1';
+        else
+            rsrc4 <= '0';
+        end if;
         iord <= '0';
+        rew <= '0';        
+    --     state <= fetch_wait_1;
+    -- elsif state=fetch_wait_1 then
+    --     pw <= '0';    
+    --     iw <= '1';
+    --     state <= fetch_wait_2;
+    -- elsif state=fetch_wait_2 then
+    --     state <= readreg;
         state <= readreg;
     elsif state=readreg then
         pw <= '0';
@@ -226,11 +243,13 @@ begin
         rsrc1 <= '1';
         rsrc2 <= '1';
         rsrc3 <= '1';
+        rsrc4 <= '0';
         state <= decode;
     elsif state=decode then
         iw <= '0';
+        mr <= '0';
         if instr_type="00" then
-            report std_logic'image(instr_variant);
+            -- report std_logic'image(instr_variant);
             if instr_variant='1' then
                 state <= arith_imm;
             else
@@ -245,6 +264,7 @@ begin
         elsif instr_type="10" then
             rsrc1 <= '0';
             rsrc3 <= '0';
+            rsrc4 <= '0';
             state <= mul;
         else
             state <= brn;
@@ -286,12 +306,6 @@ begin
         resultc <= "11";
         rew <= '1';
         state <= alu;
-    -- elsif state=arith_shreg_alu then
-    --     aw <= '1';
-    --     aluop1c <= '0';
-    --     aluop2c <= "01";
-    --     resultc <= "01";
-    --     state <= writerf;
     elsif state=alu then
         aw <= '1';
         rew <= '0';
@@ -299,6 +313,13 @@ begin
         aluop2c <= "01";
         aluop <= instruction(24 downto 21);
         resultc <= "01";
+        if instr_type="00" and 
+        (instr_class="000" or instr_class="001" or instr_class="010" or instr_class="011") then
+            -- If cmp/cmn/tst/teq
+            rfwren <= '0';
+        else
+            rfwren <= pred;
+        end if;
         state <= writerf;
     elsif state=mul then
         aw <= '1';
@@ -307,6 +328,13 @@ begin
         bsrc <= "00";
         resultc <= "00";
         if instr_class="000" then
+            if instr_type="00" and 
+            (instr_class="000" or instr_class="001" or instr_class="010" or instr_class="011") then
+                -- If cmp/cmn/tst/teq
+                rfwren <= '0';
+            else
+                rfwren <= pred;
+            end if;
             state <= writerf;
         else
             state <= mla;
@@ -325,6 +353,13 @@ begin
         aluop2c <= "10";
         aluop <= "0100";
         resultc <= "01";
+        if instr_type="00" and 
+        (instr_class="000" or instr_class="001" or instr_class="010" or instr_class="011") then
+            -- If cmp/cmn/tst/teq
+            rfwren <= '0';
+        else
+            rfwren <= pred;
+        end if;
         state <= writerf;
     elsif state=dt_imm then
         aw <= '1';
@@ -392,6 +427,7 @@ begin
         pminstr <= "000"; -- Supports only ldr presently
         pmbyte <= "000"; -- No need presently
         resultc <= "10";
+        rfwren <= pred;
         state <= writerf;
     elsif state=store then
         rew <= '0';
@@ -401,22 +437,18 @@ begin
         state <= pcincr;
     elsif state=writerf then
         rew <= '1';
-        if instr_type="00" and 
-        (instr_class="000" or instr_class="001" or instr_class="010" or instr_class="011") then
-            -- If cmp/cmn/tst/teq
-            rfwren <= '0';
-        else
-            rfwren <= pred;
-        end if;
         if instr_type="10" then
             rsrc3 <= '0';
+            rsrc4 <= '0';
         else
             rsrc3 <= '1';
+            rsrc4 <= '0';            
         end if;
         state <= pcincr;
     elsif state=pcincr then
         rew <= '1';
-        rfwren <= '0';
+        rfwren <= '1';
+        rsrc4 <= '1';
         asrc <= '0';
         bsrc <= "01";
         aluop1c <= '0';
@@ -426,9 +458,11 @@ begin
         state <= fetch;
     elsif state=pcupdate then
         rew <= '1';
-        rfwren <= '0';
+        rfwren <= '1';
+        rsrc4 <= '1';
         state <= fetch;
     end if;
+end if;
 end process;
 
 control(0) <= pw;
@@ -454,6 +488,8 @@ control(29 downto 27) <= pmbyte;
 control(30) <= fset;
 control(31) <= rew;
 control(33 downto 32) <= resultc(1 downto 0);
+control(34) <= rsrc4;
+control(35) <= mr;
 
 end Behavioral;
 
@@ -477,11 +513,11 @@ entity common is
 end common;
 
 architecture Behavioral of common is
-signal controls: std_logic_vector(33 downto 0);
+signal controls: std_logic_vector(35 downto 0);
 signal instruction: std_logic_vector(31 downto 0);
 signal wren,flags: std_logic_vector(3 downto 0);
-signal rfreset: std_logic;
-signal control_with_reset: std_logic_vector(34 downto 0);
+signal rfreset: std_logic := '0';
+signal control_with_reset: std_logic_vector(36 downto 0);
 begin
 datapath: entity work.main
     Port map (
@@ -500,5 +536,5 @@ controller: entity work.controller
         control => controls
     );
 
-control_with_reset(34 downto 0) <= rfreset & controls(33 downto 0);
+control_with_reset(36 downto 0) <= rfreset & controls(35 downto 0);
 end Behavioral;
