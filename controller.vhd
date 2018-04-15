@@ -306,7 +306,7 @@ if rising_edge(clk) then
         shamtc <= "00";
         shtypec <= '0';
         shdatac <= '0';
-        resultc <= "11";
+        resultc <= "01";
         rew <= '1';
         state <= alu;
     elsif state=arith_sh_reg then
