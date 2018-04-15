@@ -344,13 +344,12 @@ entity register_file is
   reset: in std_logic;
   wren: in std_logic; 
   output1: out std_logic_vector(31 downto 0);
-  output2: out std_logic_vector(31 downto 0);
-  pc: out std_logic_vector(31 downto 0) );
+  output2: out std_logic_vector(31 downto 0) );
 end register_file;
 
 architecture Behavioral of register_file is
 type arr1 is array(0 to 14) of std_logic_vector(31 downto 0);
-type arr2 is array(0 to 15) of std_logic;
+type arr2 is array(0 to 14) of std_logic;
 signal outputarr: arr1;
 signal inputarr: arr2;
 signal writepc,pctemp: std_logic_vector(31 downto 0);
@@ -364,22 +363,22 @@ registerloop: for i in 0 to 14 generate
               output => outputarr(i) );
 end generate;
 
-regpc: entity work.registr
-    port map(
-    clk => clock,
-    input => writepc,
-    wren => inputarr(15),
-    output => pctemp );
+-- regpc: entity work.registr
+--     port map(
+--     clk => clock,
+--     input => writepc,
+--     wren => inputarr(15),
+--     output => pctemp );
 
 iterate: for i in 0 to 14 generate
     inputarr(i) <= '1' when i=conv_integer(write_addr(3 downto 0)) else '0';
 end generate;
 
-writepc <= "00000000000000000000000000000000" when reset='1' else write_data;
-inputarr(15) <= '1' when (not reset='1' and write_addr(3 downto 0)="1111") else '0';
+-- writepc <= "00000000000000000000000000000000" when reset='1' else write_data;
+-- inputarr(15) <= '1' when (not reset='1' and write_addr(3 downto 0)="1111") else '0';
 output1 <= outputarr(conv_integer(addr1(3 downto 0)));
 output2 <= outputarr(conv_integer(addr2(3 downto 0)));
-pc(31 downto 0) <= pctemp(31 downto 0);
+-- pc(31 downto 0) <= pctemp(31 downto 0);
 
 -- process(reset,write_addr)
 -- begin
@@ -718,7 +717,7 @@ signal multop1,multop2,multout: std_logic_vector(31 downto 0);
 signal tom,from,top: std_logic_vector(31 downto 0);
 -- Register File
 signal rad1,rad2,wad,wrad: std_logic_vector(3 downto 0);
-signal rd1,rd2,wd,rfpc: std_logic_vector(31 downto 0);
+signal rd1,rd2,wd: std_logic_vector(31 downto 0);
 signal rf_reset: std_logic;
 -- Memory
 signal mad,mout: std_logic_vector(31 downto 0);
@@ -766,8 +765,7 @@ rf: entity work.register_file
     reset => rf_reset,
     wren => rfwren,
     output1 => rd1,
-    output2 => rd2,
-    pc => rfpc);
+    output2 => rd2);
     
 procmem: entity work.prempath
     Port map (
@@ -781,7 +779,7 @@ procmem: entity work.prempath
     
 pc: entity work.registr
     Port map (
-    input => rfpc,
+    input => resout,
     clk => clk,
     wren => pw,
     output => pcout);
