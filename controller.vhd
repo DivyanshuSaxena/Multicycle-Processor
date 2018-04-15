@@ -171,7 +171,7 @@ entity controller is
   clk: in std_logic;
   instruction: in std_logic_vector(31 downto 0);
   flags: in std_logic_vector(3 downto 0);
-  control: out std_logic_vector(35 downto 0) );
+  control: out std_logic_vector(34 downto 0) );
 end controller;
 
 architecture Behavioral of controller is
@@ -180,7 +180,7 @@ type state_type is (fetch, fetch_wait_1, fetch_wait_2, readreg, decode, arith_im
 alu, mul, mla, mla_alu, dt_imm, dt_reg, dt_alu, dt, brn, load, store, writerf, pcincr, pcupdate);
 signal state: state_type;
 -- control signals
-signal pw,iord,iw,dw,rsrc1,rsrc2,rsrc3,rsrc4,rfwren,asrc,shdatac,shtypec,fset,aw,bw,aluop1c,rew,mr: std_logic;
+signal pw,iord,iw,dw,rsrc1,rsrc2,rsrc3,rfwren,asrc,shdatac,shtypec,fset,aw,bw,aluop1c,rew,mr: std_logic;
 signal bsrc,aluop2c,shamtc,resultc: std_logic_vector(1 downto 0);
 signal aluop: std_logic_vector(3 downto 0);
 signal pminstr,pmbyte: std_logic_vector(2 downto 0);
@@ -230,7 +230,7 @@ if rising_edge(clk) then
         -- else
         --     rsrc4 <= '0';
         end if;
-        rsrc4 <= '0';        
+        -- rsrc4 <= '0';        
         rew <= '0';        
         iw <= '1';
         pw <= '0';
@@ -247,7 +247,7 @@ if rising_edge(clk) then
         rsrc1 <= '1';
         rsrc2 <= '1';
         rsrc3 <= '1';
-        rsrc4 <= '0';
+        -- rsrc4 <= '0';
         state <= decode;
     elsif state=decode then
         iw <= '0';
@@ -267,7 +267,7 @@ if rising_edge(clk) then
         elsif instr_type="10" then
             rsrc1 <= '0';
             rsrc3 <= '0';
-            rsrc4 <= '0';
+            -- rsrc4 <= '0';
             state <= mul;
         else
             state <= brn;
@@ -435,10 +435,8 @@ if rising_edge(clk) then
         rew <= '1';
         if instr_type="10" then
             rsrc3 <= '0';
-            rsrc4 <= '0';
         else
             rsrc3 <= '1';
-            rsrc4 <= '0';            
         end if;
         asrc <= '0';
         bsrc <= "01";
@@ -450,14 +448,12 @@ if rising_edge(clk) then
         state <= pcincr;
     elsif state=pcincr then
         rew <= '1';
-        rsrc4 <= '1';
         pw <= '1';
         iord <= '0';
         state <= fetch;
     elsif state=pcupdate then
         rew <= '1';
         rfwren <= '0';
-        rsrc4 <= '1';
         pw <= '1';
         iord <= '0';
         state <= fetch;
@@ -488,8 +484,7 @@ control(29 downto 27) <= pmbyte;
 control(30) <= fset;
 control(31) <= rew;
 control(33 downto 32) <= resultc(1 downto 0);
-control(34) <= rsrc4;
-control(35) <= mr;
+control(34) <= mr;
 
 end Behavioral;
 
@@ -513,11 +508,11 @@ entity common is
 end common;
 
 architecture Behavioral of common is
-signal controls: std_logic_vector(35 downto 0);
+signal controls: std_logic_vector(34 downto 0);
 signal instruction: std_logic_vector(31 downto 0);
 signal wren,flags: std_logic_vector(3 downto 0);
 signal rfreset: std_logic := '0';
-signal control_with_reset: std_logic_vector(36 downto 0);
+signal control_with_reset: std_logic_vector(35 downto 0);
 begin
 datapath: entity work.main
     Port map (
@@ -536,5 +531,5 @@ controller: entity work.controller
         control => controls
     );
 
-control_with_reset(36 downto 0) <= rfreset & controls(35 downto 0);
+control_with_reset(35 downto 0) <= rfreset & controls(34 downto 0);
 end Behavioral;

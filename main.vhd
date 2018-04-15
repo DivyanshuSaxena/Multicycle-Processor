@@ -371,7 +371,7 @@ end generate;
 --     output => pctemp );
 
 iterate: for i in 0 to 14 generate
-    inputarr(i) <= '1' when i=conv_integer(write_addr(3 downto 0)) else '0';
+    inputarr(i) <= '1' when (i=conv_integer(write_addr(3 downto 0)) and wren='1') else '0';
 end generate;
 
 -- writepc <= "00000000000000000000000000000000" when reset='1' else write_data;
@@ -690,7 +690,7 @@ entity main is
 --   fset: in std_logic;
 --   rew: in std_logic;
 --   resultc: in std_logic_vector(1 downto 0);
-  control: in std_logic_vector(36 downto 0);
+  control: in std_logic_vector(35 downto 0);
   clk: in std_logic;
   instr: out std_logic_vector(31 downto 0);
   wren_mem: out std_logic_vector(3 downto 0);
@@ -845,14 +845,14 @@ rfrad3: entity work.multi2plex4
     input1 => instruction(19 downto 16),
     input2 => instruction(15 downto 12),
     selector => rsrc3,
-    output => wad);
-
-rfrad4: entity work.multi2plex4
-    Port map (
-    input1 => wad,
-    input2 => "1111",
-    selector => rsrc4,
     output => wrad);
+
+-- rfrad4: entity work.multi2plex4
+--     Port map (
+--     input1 => wad,
+--     input2 => "1111",
+--     selector => rsrc4,
+--     output => wrad);
     
 rfrd1: entity work.multi2plex32
     Port map (
@@ -981,9 +981,9 @@ pmbyte <= control(29 downto 27);
 fset <= control(30) ;
 rew <= control(31);
 resultc(1 downto 0) <= control(33 downto 32) ;
-rsrc4 <= control(34);
-mr <= control(35);
-rf_reset <= control(36);
+-- rsrc4 <= control(34);
+mr <= control(34);
+rf_reset <= control(35);
 --instruction(31 downto 0) <= "11100010100000000001000000011100";
 
 end Behavioral;
