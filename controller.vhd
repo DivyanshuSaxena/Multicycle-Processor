@@ -326,6 +326,7 @@ if rising_edge(clk) then
         aluop <= instruction(24 downto 21);
         resultc <= "01";
         rfwren <= predication;
+        rsrc3 <= '1';
         state <= writerf;
     elsif state=mul then
         aw <= '1';
@@ -335,6 +336,7 @@ if rising_edge(clk) then
         resultc <= "00";
         if instr_class="000" then
             rfwren <= predication;    
+            rsrc3 <= '0';
             state <= writerf;
         else
             state <= mla;
@@ -354,6 +356,7 @@ if rising_edge(clk) then
         aluop <= "0100";
         resultc <= "01";
         rfwren <= predication;        
+        rsrc3 <= '0';
         state <= writerf;
     elsif state=dt_imm then
         aw <= '1';
@@ -367,6 +370,8 @@ if rising_edge(clk) then
             aluop <= "0110";
         end if;
         -- Do something for next state
+        rew <= '1';
+        iw <= '0';
         state <= dt;
     elsif state=dt_reg then
         bw <= '1';
@@ -392,18 +397,16 @@ if rising_edge(clk) then
         state <= dt;
     elsif state=dt then
         if instr_class="000" or instr_class="010" or instr_class="100" then
-            rew <= '1';
             rfwren <= '0';
             iord <= '1';
-            iw <= '0';
-            dw <= '0';
+            dw <= '1';
             state <= load;
         else
-            rew <= '1';
             iord <= '1';
             rsrc2 <= '0';
             state <= store;
         end if;
+        mr <= '1';
     elsif state=brn then
         asrc <= '0';
         aluop1c <= '0';
@@ -418,12 +421,13 @@ if rising_edge(clk) then
             state <= pcincr;
         end if;
     elsif state=load then
-        dw <= '1';
+        -- dw <= '1';
         pminstr <= "000"; -- Supports only ldr presently
         pmbyte <= "000"; -- No need presently
         resultc <= "10";
-        rfwren <= pred;
         rfwren <= predication;  
+        rew <= '1';
+        rsrc3 <= '1';
         state <= writerf;
     elsif state=store then
         rew <= '0';
@@ -433,23 +437,18 @@ if rising_edge(clk) then
         state <= pcincr;
     elsif state=writerf then
         rew <= '1';
-        if instr_type="10" then
-            rsrc3 <= '0';
-        else
-            rsrc3 <= '1';
-        end if;
         asrc <= '0';
         bsrc <= "01";
         aluop1c <= '0';
         aluop2c <= "10";
         aluop <= "0100";
         resultc <= "01";
-        rfwren <= '0';
         state <= pcincr;
     elsif state=pcincr then
         rew <= '1';
         pw <= '1';
         iord <= '0';
+        rfwren <= '0';
         state <= fetch;
     elsif state=pcupdate then
         rew <= '1';
