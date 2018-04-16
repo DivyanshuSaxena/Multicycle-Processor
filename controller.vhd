@@ -47,7 +47,7 @@ instr_class <= "000" when (instr(15 downto 14)="01" and instr(10)='0' and instr(
                "011" when (instr(15 downto 14)="00" and instr(3)='1' and not instr(2 downto 1)="00" and instr(8)='0') or 
                         (instr(15 downto 14)="00" and (instr(13)='1' or instr(3)='0' or instr(0)='0') and instr(12 downto 9)="1011") else    -- strh or cmn
                "100" when ((instr(15 downto 14)="01" and instr(10)='1') and instr(8)='1') else    -- ldrb
-               "101" when (instr(15 downto 14)="01" and instr(10)='1') and instr(8)='0';    -- strb  
+               "101" when (instr(15 downto 14)="01" and instr(10)='1') and instr(8)='0' else "111";    -- strb  
                -- Do something for ldrsb and ldrsh
 instr_variant <= '1' when instr(13)='1' else '0';
 instr_shift <= '1' when instr(0)='1' else '0'; -- '1' when shift is from reg
@@ -320,7 +320,7 @@ if rising_edge(clk) then
         state <= alu;
     elsif state=alu then
         aw <= '1';
-        rew <= '0';
+        -- rew <= '0';
         aluop1c <= '0';
         aluop2c <= "01";
         aluop <= instruction(24 downto 21);
