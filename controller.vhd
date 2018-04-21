@@ -337,6 +337,7 @@ if rising_edge(clk) then
         if instr_class="000" then
             rfwren <= predication;    
             rsrc3 <= '0';
+            rew <= '1';
             state <= writerf;
         else
             state <= mla;
