@@ -497,26 +497,24 @@ use IEEE.NUMERIC_STD.ALL;
 entity counter is
     Port ( clk : in std_logic;
            pushbutton : in std_logic;
-           y : out std_logic_vector(1 downto 0);
            clock : out std_logic);
 end counter;
 
 architecture behavioral of counter is
-
 signal c : std_logic_vector(31 downto 0) := "00000000000000000000000000000000";
-
 begin
     process (clk)
     begin
         if clk = '1' and clk'event then 
             c <= std_logic_vector(unsigned(c) + 1);
             if pushbutton ='0' then
-                y <= c(15 downto 14);
+                -- y <= c(15 downto 14);
+                clock <= c(24);
             else 
-                y <= c(1 downto 0);
+                -- y <= c(1 downto 0);
+                clock <= c(0);
             end if;         
         end if;
-        clock <= c(22);
     end process;
     
 end behavioral;
@@ -600,54 +598,6 @@ end behavioral;
 
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
-use IEEE.NUMERIC_STD.ALL;
-
-entity ssd is
-    Port ( b : in STD_LOGIC_VECTOR (15 downto 0);
-           clk : in STD_LOGIC;
-           anode : out STD_LOGIC_VECTOR (3 downto 0);
-           cathode : out STD_LOGIC_VECTOR (6 downto 0);
-           clock : out STD_LOGIC;
-           pushbutton : in STD_LOGIC);
-end ssd;
-
-architecture Behavioral of ssd is
-signal anode_encoded : std_logic_vector(1 downto 0);
-signal anode_i : std_logic_vector(3 downto 0);
-signal b_selected : std_logic_vector(3 downto 0);
-begin
-
-clk_speed : entity work.counter
-    Port map(
-    clk => clk,
-    pushbutton => pushbutton,
-    clock => clock,
-    y => anode_encoded);
-    
-anode_decoding : entity work.anode_decoder
-    Port map(
-    anode_sel => anode_encoded,
-    anode_out => anode_i);
-
-anode <= anode_i;
-
-b_select : entity work.bin_select
-    Port map(
-    b_in => b,
-    b_out => b_selected,
-    anode => anode_i);
-
-seven_bit : entity work.bcd
-    Port map(
-    bin => b_selected,
-    output => cathode);
-
-end Behavioral;
-
-----------------------------------------------------------------------------------
-
-library IEEE;
-use IEEE.STD_LOGIC_1164.ALL;
 
 -- Uncomment the following library declaration if using
 -- arithmetic functions with Signed or Unsigned values
@@ -662,6 +612,7 @@ entity common is
   Port (
   clk: in std_logic;
   regview: in std_logic_vector(15 downto 0);
+  pushbutton: in std_logic;
   regval: out std_logic_vector(15 downto 0) );
 end common;
 
@@ -686,10 +637,17 @@ begin
 --         pushbutton => pushbutton
 --     );
 
+counter: entity work.counter
+    Port map (
+        clk => clk,
+        pushbutton => pushbutton,
+        clock => clock
+    );
+
 datapath: entity work.main
     Port map (
         control => control_with_reset,
-        clk => clk,  
+        clk => clock,  
         instr => instruction,
         wren_mem => wren,
         flags => flags,
@@ -712,7 +670,7 @@ datapath: entity work.main
 
 controller: entity work.controller
     Port map (
-        clk => clk,
+        clk => clock,
         instruction => instruction,
         flags => flags,
         control => controls
