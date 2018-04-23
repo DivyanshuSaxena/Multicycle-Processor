@@ -492,6 +492,162 @@ end Behavioral;
 
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
+use IEEE.NUMERIC_STD.ALL;
+
+entity counter is
+    Port ( clk : in std_logic;
+           pushbutton : in std_logic;
+           y : out std_logic_vector(1 downto 0);
+           clock : out std_logic);
+end counter;
+
+architecture behavioral of counter is
+
+signal c : std_logic_vector(31 downto 0) := "00000000000000000000000000000000";
+
+begin
+    process (clk)
+    begin
+        if clk = '1' and clk'event then 
+            c <= std_logic_vector(unsigned(c) + 1);
+            if pushbutton ='0' then
+                y <= c(15 downto 14);
+            else 
+                y <= c(1 downto 0);
+            end if;         
+        end if;
+        clock <= c(22);
+    end process;
+    
+end behavioral;
+
+----------------------------------------------------------------------------------
+
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+use IEEE.NUMERIC_STD.ALL;
+
+entity bcd is
+    Port( bin : in std_logic_vector(3 downto 0);
+          output : out std_logic_vector(6 downto 0));
+end bcd;
+
+architecture behavioral of bcd is
+begin
+with bin select
+output <= "1111001" when "0001",
+          "0100100" when "0010",
+          "0110000" when "0011",
+          "0011001" when "0100",
+          "0010010" when "0101",
+          "0000010" when "0110",
+          "1111000" when "0111",
+          "0000000" when "1000",
+          "0010000" when "1001",
+          "0001000" when "1010",
+          "0000011" when "1011",
+          "1000110" when "1100",
+          "0100001" when "1101",
+          "0000110" when "1110",
+          "0001110" when "1111",
+          "1000000" when others;
+          
+end behavioral;
+
+----------------------------------------------------------------------------------
+
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+use IEEE.NUMERIC_STD.ALL;
+
+entity bin_select is
+    Port ( b_in : in std_logic_vector(15 downto 0);
+           b_out : out std_logic_vector(3 downto 0);
+           anode : in std_logic_vector(3 downto 0));
+end bin_select;
+
+architecture behavioral of bin_select is
+begin
+with anode select
+    b_out <= b_in(15 downto 12) when "0111",
+             b_in(11 downto 8) when "1011",
+             b_in(7 downto 4) when "1101",
+             b_in(3 downto 0) when others;
+             
+end behavioral;
+
+----------------------------------------------------------------------------------
+
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+use IEEE.NUMERIC_STD.ALL;
+
+entity anode_decoder is
+    Port ( anode_sel : in std_logic_vector(1 downto 0);
+           anode_out : out std_logic_vector(3 downto 0));
+end anode_decoder; 
+          
+architecture behavioral of anode_decoder is
+begin
+with anode_sel select
+    anode_out <= "0111" when "00",
+                 "1011" when "01",
+                 "1101" when "10",
+                 "1110" when others;
+end behavioral;
+
+----------------------------------------------------------------------------------
+
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+use IEEE.NUMERIC_STD.ALL;
+
+entity ssd is
+    Port ( b : in STD_LOGIC_VECTOR (15 downto 0);
+           clk : in STD_LOGIC;
+           anode : out STD_LOGIC_VECTOR (3 downto 0);
+           cathode : out STD_LOGIC_VECTOR (6 downto 0);
+           clock : out STD_LOGIC;
+           pushbutton : in STD_LOGIC);
+end ssd;
+
+architecture Behavioral of ssd is
+signal anode_encoded : std_logic_vector(1 downto 0);
+signal anode_i : std_logic_vector(3 downto 0);
+signal b_selected : std_logic_vector(3 downto 0);
+begin
+
+clk_speed : entity work.counter
+    Port map(
+    clk => clk,
+    pushbutton => pushbutton,
+    clock => clock,
+    y => anode_encoded);
+    
+anode_decoding : entity work.anode_decoder
+    Port map(
+    anode_sel => anode_encoded,
+    anode_out => anode_i);
+
+anode <= anode_i;
+
+b_select : entity work.bin_select
+    Port map(
+    b_in => b,
+    b_out => b_selected,
+    anode => anode_i);
+
+seven_bit : entity work.bcd
+    Port map(
+    bin => b_selected,
+    output => cathode);
+
+end Behavioral;
+
+----------------------------------------------------------------------------------
+
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
 
 -- Uncomment the following library declaration if using
 -- arithmetic functions with Signed or Unsigned values
@@ -504,23 +660,54 @@ use IEEE.STD_LOGIC_1164.ALL;
 
 entity common is
   Port (
-  clk: in std_logic );
+  clk: in std_logic;
+  regview: in std_logic_vector(15 downto 0);
+  regval: out std_logic_vector(15 downto 0) );
 end common;
 
 architecture Behavioral of common is
+signal clock: std_logic;
 signal controls: std_logic_vector(34 downto 0);
 signal instruction: std_logic_vector(31 downto 0);
 signal wren,flags: std_logic_vector(3 downto 0);
 signal rfreset: std_logic := '0';
 signal control_with_reset: std_logic_vector(35 downto 0);
+-- signal regval: std_logic_vector(15 downto 0);
+signal regdata1,regdata2,regdata3,regdata4,regdata5,regdata6,regdata7,regdata8: std_logic_vector(31 downto 0);
+signal regdata9,regdata10,regdata11,regdata12,regdata13,regdata14,regdata15: std_logic_vector(31 downto 0);
 begin
+-- ssd: entity work.ssd
+--     Port map (
+--         b => regval(15 downto 0),
+--         clk => clk,
+--         anode => anode,
+--         cathode => cathode,
+--         clock => clock,
+--         pushbutton => pushbutton
+--     );
+
 datapath: entity work.main
     Port map (
         control => control_with_reset,
         clk => clk,  
         instr => instruction,
         wren_mem => wren,
-        flags => flags
+        flags => flags,
+        regdata1 => regdata1,
+        regdata2 => regdata2,
+        regdata3 => regdata3,
+        regdata4 => regdata4,
+        regdata5 => regdata5,
+        regdata6 => regdata6,
+        regdata7 => regdata7,
+        regdata8 => regdata8,
+        regdata9 => regdata9,
+        regdata10 => regdata10,
+        regdata11 => regdata11,
+        regdata12 => regdata12,
+        regdata13 => regdata13,
+        regdata14 => regdata14,
+        regdata15 => regdata15
     );
 
 controller: entity work.controller
@@ -532,4 +719,22 @@ controller: entity work.controller
     );
 
 control_with_reset(35 downto 0) <= rfreset & controls(34 downto 0);
+
+regval <= regdata1(15 downto 0) when regview(0)='1' else
+          regdata2(15 downto 0) when regview(1)='1' else
+          regdata3(15 downto 0) when regview(2)='1' else
+          regdata4(15 downto 0) when regview(3)='1' else
+          regdata5(15 downto 0) when regview(4)='1' else
+          regdata6(15 downto 0) when regview(5)='1' else
+          regdata7(15 downto 0) when regview(6)='1' else
+          regdata8(15 downto 0) when regview(7)='1' else
+          regdata9(15 downto 0) when regview(8)='1' else
+          regdata10(15 downto 0) when regview(9)='1' else
+          regdata11(15 downto 0) when regview(10)='1' else
+          regdata12(15 downto 0) when regview(11)='1' else
+          regdata13(15 downto 0) when regview(12)='1' else
+          regdata14(15 downto 0) when regview(13)='1' else
+          regdata15(15 downto 0) when regview(14)='1' else
+          "0000000000000000";
+          
 end Behavioral;

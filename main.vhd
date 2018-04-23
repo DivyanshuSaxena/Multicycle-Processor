@@ -344,7 +344,22 @@ entity register_file is
   reset: in std_logic;
   wren: in std_logic; 
   output1: out std_logic_vector(31 downto 0);
-  output2: out std_logic_vector(31 downto 0) );
+  output2: out std_logic_vector(31 downto 0);
+  regdata1: out std_logic_vector(31 downto 0);
+  regdata2: out std_logic_vector(31 downto 0);
+  regdata3: out std_logic_vector(31 downto 0);
+  regdata4: out std_logic_vector(31 downto 0);
+  regdata5: out std_logic_vector(31 downto 0);
+  regdata6: out std_logic_vector(31 downto 0);
+  regdata7: out std_logic_vector(31 downto 0);
+  regdata8: out std_logic_vector(31 downto 0);
+  regdata9: out std_logic_vector(31 downto 0);
+  regdata10: out std_logic_vector(31 downto 0);
+  regdata11: out std_logic_vector(31 downto 0);
+  regdata12: out std_logic_vector(31 downto 0);
+  regdata13: out std_logic_vector(31 downto 0);
+  regdata14: out std_logic_vector(31 downto 0);
+  regdata15: out std_logic_vector(31 downto 0)  );
 end register_file;
 
 architecture Behavioral of register_file is
@@ -378,20 +393,22 @@ end generate;
 -- inputarr(15) <= '1' when (not reset='1' and write_addr(3 downto 0)="1111") else '0';
 output1 <= outputarr(conv_integer(addr1(3 downto 0)));
 output2 <= outputarr(conv_integer(addr2(3 downto 0)));
--- pc(31 downto 0) <= pctemp(31 downto 0);
 
--- process(reset,write_addr)
--- begin
---     if(reset='1') then
---         writepc <= "00000000000000000000000000000000";
---         inputarr(15) <= '1';
---     elsif (write_addr(3 downto 0)="1111") then
---         writepc <= write_data;
---         inputarr(15) <= '1'; 
---     else
---         inputarr(15) <= '0';
---     end if;
--- end process;
+regdata1 <= outputarr(0);
+regdata2 <= outputarr(1);
+regdata3 <= outputarr(2);
+regdata4 <= outputarr(3);
+regdata5 <= outputarr(4);
+regdata6 <= outputarr(5);
+regdata7 <= outputarr(6);
+regdata8 <= outputarr(7);
+regdata9 <= outputarr(8);
+regdata10 <= outputarr(9);
+regdata11 <= outputarr(10);
+regdata12 <= outputarr(11);
+regdata13 <= outputarr(12);
+regdata14 <= outputarr(13);
+regdata15 <= outputarr(14);
 
 end Behavioral;
 
@@ -667,34 +684,26 @@ use IEEE.STD_LOGIC_1164.ALL;
 
 entity main is
   Port (
---   pw: in std_logic;
---   iord: in std_logic;
---   iw: in std_logic;
---   dw: in std_logic;
---   rsrc1: in std_logic;
---   rsrc2: in std_logic;
---   rsrc3: in std_logic;
---   rfwren: in std_logic;
---   asrc: in std_logic;
---   bsrc: in std_logic_vector(1 downto 0);
---   aw: in std_logic;
---   bw: in std_logic;
---   aluop1c: in std_logic; 
---   aluop2c: in std_logic_vector(1 downto 0); 
---   aluop: in std_logic_vector(3 downto 0);
---   shdatac: in std_logic;
---   shamtc: in std_logic_vector(1 downto 0);
---   shtypec: in std_logic;
---   pminstr: in std_logic_vector(2 downto 0);
---   pmbyte: in std_logic_vector(2 downto 0);
---   fset: in std_logic;
---   rew: in std_logic;
---   resultc: in std_logic_vector(1 downto 0);
   control: in std_logic_vector(35 downto 0);
   clk: in std_logic;
   instr: out std_logic_vector(31 downto 0);
   wren_mem: out std_logic_vector(3 downto 0);
-  flags: out std_logic_vector(3 downto 0) );
+  flags: out std_logic_vector(3 downto 0);
+  regdata1: out std_logic_vector(31 downto 0);
+  regdata2: out std_logic_vector(31 downto 0);
+  regdata3: out std_logic_vector(31 downto 0);
+  regdata4: out std_logic_vector(31 downto 0);
+  regdata5: out std_logic_vector(31 downto 0);
+  regdata6: out std_logic_vector(31 downto 0);
+  regdata7: out std_logic_vector(31 downto 0);
+  regdata8: out std_logic_vector(31 downto 0);
+  regdata9: out std_logic_vector(31 downto 0);
+  regdata10: out std_logic_vector(31 downto 0);
+  regdata11: out std_logic_vector(31 downto 0);
+  regdata12: out std_logic_vector(31 downto 0);
+  regdata13: out std_logic_vector(31 downto 0);
+  regdata14: out std_logic_vector(31 downto 0);
+  regdata15: out std_logic_vector(31 downto 0) );
 end main;
 
 architecture Behavioral of main is
@@ -765,7 +774,22 @@ rf: entity work.register_file
     reset => rf_reset,
     wren => rfwren,
     output1 => rd1,
-    output2 => rd2);
+    output2 => rd2,
+    regdata1 => regdata1,
+    regdata2 => regdata2,
+    regdata3 => regdata3,
+    regdata4 => regdata4,
+    regdata5 => regdata5,
+    regdata6 => regdata6,
+    regdata7 => regdata7,
+    regdata8 => regdata8,
+    regdata9 => regdata9,
+    regdata10 => regdata10,
+    regdata11 => regdata11,
+    regdata12 => regdata12,
+    regdata13 => regdata13,
+    regdata14 => regdata14,
+    regdata15 => regdata15 );
     
 procmem: entity work.prempath
     Port map (
