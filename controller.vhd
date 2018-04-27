@@ -650,22 +650,7 @@ datapath: entity work.main
         clk => clock,  
         instr => instruction,
         wren_mem => wren,
-        flags => flags,
-        regdata1 => regdata1,
-        regdata2 => regdata2,
-        regdata3 => regdata3,
-        regdata4 => regdata4,
-        regdata5 => regdata5,
-        regdata6 => regdata6,
-        regdata7 => regdata7,
-        regdata8 => regdata8,
-        regdata9 => regdata9,
-        regdata10 => regdata10,
-        regdata11 => regdata11,
-        regdata12 => regdata12,
-        regdata13 => regdata13,
-        regdata14 => regdata14,
-        regdata15 => regdata15
+        flags => flags
     );
 
 controller: entity work.controller
@@ -678,21 +663,21 @@ controller: entity work.controller
 
 control_with_reset(35 downto 0) <= rfreset & controls(34 downto 0);
 
-regval <= regdata1(15 downto 0) when regview(0)='1' else
-          regdata2(15 downto 0) when regview(1)='1' else
-          regdata3(15 downto 0) when regview(2)='1' else
-          regdata4(15 downto 0) when regview(3)='1' else
-          regdata5(15 downto 0) when regview(4)='1' else
-          regdata6(15 downto 0) when regview(5)='1' else
-          regdata7(15 downto 0) when regview(6)='1' else
-          regdata8(15 downto 0) when regview(7)='1' else
-          regdata9(15 downto 0) when regview(8)='1' else
-          regdata10(15 downto 0) when regview(9)='1' else
-          regdata11(15 downto 0) when regview(10)='1' else
-          regdata12(15 downto 0) when regview(11)='1' else
-          regdata13(15 downto 0) when regview(12)='1' else
-          regdata14(15 downto 0) when regview(13)='1' else
-          regdata15(15 downto 0) when regview(14)='1' else
-          "0000000000000000";
+-- regval <= regdata1(15 downto 0) when regview(0)='1' else
+--           regdata2(15 downto 0) when regview(1)='1' else
+--           regdata3(15 downto 0) when regview(2)='1' else
+--           regdata4(15 downto 0) when regview(3)='1' else
+--           regdata5(15 downto 0) when regview(4)='1' else
+--           regdata6(15 downto 0) when regview(5)='1' else
+--           regdata7(15 downto 0) when regview(6)='1' else
+--           regdata8(15 downto 0) when regview(7)='1' else
+--           regdata9(15 downto 0) when regview(8)='1' else
+--           regdata10(15 downto 0) when regview(9)='1' else
+--           regdata11(15 downto 0) when regview(10)='1' else
+--           regdata12(15 downto 0) when regview(11)='1' else
+--           regdata13(15 downto 0) when regview(12)='1' else
+--           regdata14(15 downto 0) when regview(13)='1' else
+--           regdata15(15 downto 0) when regview(14)='1' else
+--           "0000000000000000";
           
 end Behavioral;

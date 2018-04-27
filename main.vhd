@@ -688,22 +688,7 @@ entity main is
   clk: in std_logic;
   instr: out std_logic_vector(31 downto 0);
   wren_mem: out std_logic_vector(3 downto 0);
-  flags: out std_logic_vector(3 downto 0);
-  regdata1: out std_logic_vector(31 downto 0);
-  regdata2: out std_logic_vector(31 downto 0);
-  regdata3: out std_logic_vector(31 downto 0);
-  regdata4: out std_logic_vector(31 downto 0);
-  regdata5: out std_logic_vector(31 downto 0);
-  regdata6: out std_logic_vector(31 downto 0);
-  regdata7: out std_logic_vector(31 downto 0);
-  regdata8: out std_logic_vector(31 downto 0);
-  regdata9: out std_logic_vector(31 downto 0);
-  regdata10: out std_logic_vector(31 downto 0);
-  regdata11: out std_logic_vector(31 downto 0);
-  regdata12: out std_logic_vector(31 downto 0);
-  regdata13: out std_logic_vector(31 downto 0);
-  regdata14: out std_logic_vector(31 downto 0);
-  regdata15: out std_logic_vector(31 downto 0) );
+  flags: out std_logic_vector(3 downto 0) );
 end main;
 
 architecture Behavioral of main is
@@ -774,22 +759,7 @@ rf: entity work.register_file
     reset => rf_reset,
     wren => rfwren,
     output1 => rd1,
-    output2 => rd2,
-    regdata1 => regdata1,
-    regdata2 => regdata2,
-    regdata3 => regdata3,
-    regdata4 => regdata4,
-    regdata5 => regdata5,
-    regdata6 => regdata6,
-    regdata7 => regdata7,
-    regdata8 => regdata8,
-    regdata9 => regdata9,
-    regdata10 => regdata10,
-    regdata11 => regdata11,
-    regdata12 => regdata12,
-    regdata13 => regdata13,
-    regdata14 => regdata14,
-    regdata15 => regdata15 );
+    output2 => rd2 );
     
 procmem: entity work.prempath
     Port map (
@@ -966,16 +936,6 @@ ram: entity work.ram
     mr => mr,
     wren => memwren);
 
--- bram: entity work.bram_wrapper
---     Port map (
---     bram_porta_addr => mad,
---     bram_porta_clk => clk,
---     bram_porta_din => tom,
---     bram_porta_dout => mout,
---     bram_porta_en => '1',
---     bram_porta_rst => '0',
---     bram_porta_we => memwren);
-    
 ext4 <= instruction(11 downto 8) & '0';
 wren_mem(3 downto 0) <= memwren(3 downto 0);
 instr <= instruction;
