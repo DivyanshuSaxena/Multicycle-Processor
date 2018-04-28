@@ -169,6 +169,7 @@ use IEEE.STD_LOGIC_1164.ALL;
 entity controller is
   Port (
   clk: in std_logic;
+  interrupt: in std_logic;
   instruction: in std_logic_vector(31 downto 0);
   flags: in std_logic_vector(3 downto 0);
   control: out std_logic_vector(34 downto 0) );
@@ -505,6 +506,7 @@ use IEEE.STD_LOGIC_1164.ALL;
 entity common is
   Port (
   clk: in std_logic;
+  interrupt: in std_logic;
   fromem: in std_logic_vector(31 downto 0);
   maddr: out std_logic_vector(31 downto 0);
   tomem: out std_logic_vector(31 downto 0);
@@ -537,6 +539,7 @@ controller: entity work.controller
         clk => clk,
         instruction => instruction,
         flags => flags,
+        interrupt => interrupt,
         control => controls
     );
 
