@@ -43,9 +43,11 @@ begin
     process(clk)
     begin
         if state=idlest then
+            hready <= '0';
             if htrans='1' and hsel='1' then
                 address <= haddr;
                 if hwrite='1' then
+                    write_data <= hwdata;
                     state <= writest;
                 else
                     state <= readst;
@@ -54,7 +56,7 @@ begin
                 state <= idlest;
             end if;
         elsif state=writest then
-            write_data <= hwdata;
+            hready <= '1';
             state <= idlest;
         else
             hready <= '1';
@@ -87,12 +89,18 @@ type state_type is (idlest,wait1,wait2,writest,readst);
 signal state: state_type;
 signal address: std_logic_vector(31 downto 0);
 signal write_data, fetch_data: std_logic_vector(31 downto 0);
+signal row: std_logic;
 begin
     process(clk)
     begin
         if state=idlest then
+            hready <= '0';
             if htrans='1' and hsel='1' then
                 address <= haddr;
+                row <= hwrite;
+                if row='1' then
+                    write_data <= hwdata;
+                end if;
                 state <= wait1;
             else
                 state <= idlest;
@@ -100,13 +108,13 @@ begin
         elsif state=wait1 then
             state <= wait2;
         elsif state=wait2 then
-            if hwrite='1' then
+            if row='1' then
                 state <= writest;
             else
                 state <= readst;
             end if;
         elsif state=writest then
-            write_data <= hwdata;
+            hready <= '1';
             state <= idlest;
         else
             hready <= '1';
