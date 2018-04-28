@@ -177,7 +177,7 @@ end controller;
 
 architecture Behavioral of controller is
 -- fsm
-type state_type is (fetch, fetch_wait_1, fetch_wait_2, readreg, decode, arith_imm, arith_reg, arith_sh_imm, arith_sh_reg,
+type state_type is (fetch, mem_wait, readreg, decode, arith_imm, arith_reg, arith_sh_imm, arith_sh_reg,
 alu, mul, mla, mla_alu, dt_imm, dt_reg, dt_alu, dt, brn, load, store, writerf, pcincr, pcupdate);
 signal state: state_type;
 -- control signals
@@ -195,6 +195,7 @@ signal pred: std_logic := '1';
 signal predication,undef: std_logic;
 -- state signals
 signal init: std_logic := '0';
+signal swi: std_logic_vector(1 downto 0);
 begin
 
 decoder: entity work.inst_decoder
@@ -242,7 +243,20 @@ if rising_edge(clk) then
     --     state <= fetch_wait_2;
     -- elsif state=fetch_wait_2 then
     --     state <= readreg;
-        state <= readreg;
+        swi <= "00";
+        state <= mem_wait;
+    elsif state=mem_wait then
+        if interrupt='1' then
+            state <= mem_wait;
+        else
+            if swi="00" then
+                state <= readreg;
+            elsif swi="01" then
+                state <= writerf;
+            else    
+                state <= pcincr;
+            end if;
+        end if;
     elsif state=readreg then
         mr <= '0';
         rsrc1 <= '1';
@@ -430,13 +444,15 @@ if rising_edge(clk) then
         rfwren <= predication;  
         rew <= '1';
         rsrc3 <= '1';
-        state <= writerf;
+        swi <= "01";
+        state <= mem_wait;
     elsif state=store then
         rew <= '0';
         bw <= '1';
         bsrc <= "00";
         pminstr <= "101";
-        state <= pcincr;
+        swi <= "10";
+        state <= mem_wait;
     elsif state=writerf then
         rew <= '1';
         asrc <= '0';

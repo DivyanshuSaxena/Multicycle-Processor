@@ -168,7 +168,7 @@ begin
             state <= idlest;
         else
             hready <= '1';
-            hrdata <= switchin;
+            hrdata <= "0000000000000000" & switchin;
             state <= idlest;
         end if;
     end process;
@@ -252,7 +252,7 @@ architecture Behavioral of slavessd is
 type state_type is (idlest,writest,readst);
 signal state: state_type;
 signal address: std_logic_vector(15 downto 0);
-signal write_data, fetch_data: std_logic_vector(15 downto 0);
+signal write_data, fetch_data: std_logic_vector(31 downto 0);
 signal hclock: std_logic;
 signal bout,anode_int: std_logic_vector(3 downto 0);
 begin
@@ -261,7 +261,7 @@ bcd: entity work.bcd
           output => cathode);
 
 binsel: entity work.bin_select
-    Port map ( b_in => write_data,
+    Port map ( b_in => write_data(15 downto 0),
            b_out => bout,
            anode => anode_int);
 
@@ -375,6 +375,7 @@ use IEEE.STD_LOGIC_1164.ALL;
 entity master is
     Port (
         hclk: in std_logic;
+        intover: in std_logic;
         hready: in std_logic;
         hrdata: in std_logic_vector(31 downto 0);
         hwrite: out std_logic; 
@@ -387,14 +388,16 @@ end master;
 architecture Behavioral of master is
 type state_type is (idlest,readywait);
 signal state: state_type;
-signal address,rdata,wdata: std_logic_vector(31 downto 0);
-signal start, row: std_logic;
+signal address: std_logic_vector(15 downto 0);
+signal extraddr,rdata,wdata: std_logic_vector(31 downto 0);
+signal start, row, interrupt: std_logic;
 begin
 processor: entity work.common
     Port map (
         clk => hclk,
+        interrupt => interrupt, 
         fromem => rdata,
-        maddr => address,
+        maddr => extraddr,
         tomem => wdata,
         wren => memwren);
 
@@ -423,6 +426,18 @@ begin
         end if;
     end if;
 end process;
+
+process(intover,hready)
+begin
+    if (hready='0' and address(11 downto 3)="111111111" and address(2)='0') then
+        interrupt <= '1';
+    elsif (intover='0' and address(11 downto 2)="1111111111") then 
+        interrupt <= '1';
+    else
+        interrupt <= '0';
+    end if;
+end process;
+extraddr <= "0000000000000000" & address;
 end Behavioral;
 
 ----------------------------------------------------------------------------------
@@ -509,6 +524,7 @@ entity toplevel is
     Port (
         clk: in std_logic;
         pushbutton: in std_logic;
+        intover: in std_logic;
         switches: in std_logic_vector(15 downto 0);
         led: out std_logic_vector(15 downto 0);
         cathode: out std_logic_vector(6 downto 0);
@@ -518,7 +534,8 @@ end toplevel;
 architecture Behavioral of toplevel is
 signal slowclk,ready,buswrite,bustrans,selswitch,selled,selssd,selmem: std_logic;
 signal readyswitch,readyled,readyssd,readymem: std_logic;
-signal buswd,busrd,busaddr: std_logic_vector(15 downto 0);
+signal buswd,busrd: std_logic_vector(31 downto 0);
+signal busaddr: std_logic_vector(15 downto 0);
 signal switchdata,leddata,ssddata: std_logic_vector(31 downto 0);
 signal memdata: std_logic_vector(31 downto 0);
 signal memwren: std_logic_vector(3 downto 0);
@@ -533,6 +550,7 @@ count: entity work.counter
 master: entity work.master
     Port map (
         hclk => slowclk,
+        intover => intover,
         hready => ready,
         hrdata => busrd,
         hwrite => buswrite, 
