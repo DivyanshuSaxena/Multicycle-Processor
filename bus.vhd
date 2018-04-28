@@ -121,6 +121,55 @@ end Behavioral;
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 
+entity master is
+    Port (
+        hclk: in std_logic;
+        hready: in std_logic_vector(31 downto 0);
+        hrdata: in std_logic_vector(31 downto 0);
+        hwrite: out std_logic; 
+        htrans: out std_logic;
+        haddr: out std_logic_vector(31 downto 0);
+        hwdata: out std_logic_vector(31 downto 0) );
+end master;
+
+architecture Behavioral of master is
+type state_type is (idlest,readywait);
+signal state: state_type;
+signal address,rdata,wdata: std_logic_vector(31 downto 0);
+signal start, row: std_logic;
+begin
+    process(clk)
+    begin
+        if state=idlest then
+            if start='1' then
+                htrans <= '1';
+                haddr <= address;
+                hwrite <= row;
+                if row='1' then
+                    hwdata <= wdata;
+                end if;
+                state <= readywait;
+            else
+                state <= idlest;
+            end if;
+        else
+            if hready='1' then
+                if row='0' then
+                    rdata <= hrdata;
+                end if;
+                state <= idlest;
+            else
+                state <= readywait;
+            end if;
+        end if;
+    end process;
+end Behavioral;
+
+----------------------------------------------------------------------------------
+
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+
 -- Uncomment the following library declaration if using
 -- arithmetic functions with Signed or Unsigned values
 --use IEEE.NUMERIC_STD.ALL;
