@@ -505,31 +505,28 @@ use IEEE.STD_LOGIC_1164.ALL;
 entity common is
   Port (
   clk: in std_logic;
-  pushbutton: in std_logic );
+  fromem: in std_logic_vector(31 downto 0);
+  maddr: out std_logic_vector(31 downto 0);
+  tomem: out std_logic_vector(31 downto 0);
+  wren: out std_logic_vector(3 downto 0) );
 end common;
 
 architecture Behavioral of common is
 signal clock: std_logic;
 signal controls: std_logic_vector(34 downto 0);
 signal instruction: std_logic_vector(31 downto 0);
-signal wren,flags: std_logic_vector(3 downto 0);
+signal flags: std_logic_vector(3 downto 0);
 signal rfreset: std_logic := '0';
 signal control_with_reset: std_logic_vector(35 downto 0);
--- signal regval: std_logic_vector(15 downto 0);
--- signal regdata1,regdata2,regdata3,regdata4,regdata5,regdata6,regdata7,regdata8: std_logic_vector(31 downto 0);
--- signal regdata9,regdata10,regdata11,regdata12,regdata13,regdata14,regdata15: std_logic_vector(31 downto 0);
 begin
-counter: entity work.counter
-    Port map (
-        clk => clk,
-        pushbutton => pushbutton,
-        clock => clock
-    );
 
 datapath: entity work.main
     Port map (
         control => control_with_reset,
-        clk => clock,  
+        clk => clk,  
+        fromem => fromem,
+        maddr => maddr,
+        tomem => tomem,
         instr => instruction,
         wren_mem => wren,
         flags => flags
@@ -537,29 +534,12 @@ datapath: entity work.main
 
 controller: entity work.controller
     Port map (
-        clk => clock,
+        clk => clk,
         instruction => instruction,
         flags => flags,
         control => controls
     );
 
 control_with_reset(35 downto 0) <= rfreset & controls(34 downto 0);
-
--- regval <= regdata1(15 downto 0) when regview(0)='1' else
---           regdata2(15 downto 0) when regview(1)='1' else
---           regdata3(15 downto 0) when regview(2)='1' else
---           regdata4(15 downto 0) when regview(3)='1' else
---           regdata5(15 downto 0) when regview(4)='1' else
---           regdata6(15 downto 0) when regview(5)='1' else
---           regdata7(15 downto 0) when regview(6)='1' else
---           regdata8(15 downto 0) when regview(7)='1' else
---           regdata9(15 downto 0) when regview(8)='1' else
---           regdata10(15 downto 0) when regview(9)='1' else
---           regdata11(15 downto 0) when regview(10)='1' else
---           regdata12(15 downto 0) when regview(11)='1' else
---           regdata13(15 downto 0) when regview(12)='1' else
---           regdata14(15 downto 0) when regview(13)='1' else
---           regdata15(15 downto 0) when regview(14)='1' else
---           "0000000000000000";
           
 end Behavioral;

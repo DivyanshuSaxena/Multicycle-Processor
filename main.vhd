@@ -536,33 +536,33 @@ entity ram is
 end ram;
 
 architecture Behavioral of ram is
-type memory_type is array(0 to 1024) of std_logic_vector(31 downto 0);
+type memory_type is array(0 to 4096) of std_logic_vector(31 downto 0);
 signal memory: memory_type  := ("11100011101000000010000000000011", "11100011101000000011000000000111", "11100000100000100001000000000011", "11100101100100100001000000000001", "11100000010000100001000000000011", "11100101100000100011000000000011", "11100000000001000000001110010010", others => (others => '0'));
 begin
     process(clk)
     begin
         if mr='1' then
-            dout(31 downto 0) <= memory(conv_integer(addr(3 downto 0)))(31 downto 0);
+            dout(31 downto 0) <= memory(conv_integer(addr(11 downto 0)))(31 downto 0);
         elsif not wren="0000" then
             if wren(0)='1' then
-                memory(conv_integer(addr(3 downto 0)))(7 downto 0) <= din(7 downto 0);
+                memory(conv_integer(addr(11 downto 0)))(7 downto 0) <= din(7 downto 0);
             else
-                memory(conv_integer(addr(3 downto 0)))(7 downto 0) <= "00000000";
+                memory(conv_integer(addr(11 downto 0)))(7 downto 0) <= "00000000";
             end if;
             if wren(1)='1' then
-                memory(conv_integer(addr(3 downto 0)))(15 downto 8) <= din(15 downto 8);
+                memory(conv_integer(addr(11 downto 0)))(15 downto 8) <= din(15 downto 8);
             else
-                memory(conv_integer(addr(3 downto 0)))(15 downto 8) <= "00000000";
+                memory(conv_integer(addr(11 downto 0)))(15 downto 8) <= "00000000";
             end if;
             if wren(2)='1' then
-                memory(conv_integer(addr(3 downto 0)))(23 downto 16) <= din(23 downto 16);
+                memory(conv_integer(addr(11 downto 0)))(23 downto 16) <= din(23 downto 16);
             else
-                memory(conv_integer(addr(3 downto 0)))(23 downto 16) <= "00000000";
+                memory(conv_integer(addr(11 downto 0)))(23 downto 16) <= "00000000";
             end if;
             if wren(3)='1' then
-                memory(conv_integer(addr(3 downto 0)))(31 downto 24) <= din(31 downto 24);
+                memory(conv_integer(addr(11 downto 0)))(31 downto 24) <= din(31 downto 24);
             else
-                memory(conv_integer(addr(3 downto 0)))(31 downto 24) <= "00000000";
+                memory(conv_integer(addr(11 downto 0)))(31 downto 24) <= "00000000";
             end if;
         end if;
     end process;
@@ -682,10 +682,14 @@ use IEEE.STD_LOGIC_1164.ALL;
 --library UNISIM;
 --use UNISIM.VComponents.all;
 
+
 entity main is
   Port (
   control: in std_logic_vector(35 downto 0);
   clk: in std_logic;
+  fromem: in std_logic_vector(31 downto 0);
+  maddr: out std_logic_vector(31 downto 0);
+  tomem: out std_logic_vector(31 downto 0);
   instr: out std_logic_vector(31 downto 0);
   wren_mem: out std_logic_vector(3 downto 0);
   flags: out std_logic_vector(3 downto 0) );
