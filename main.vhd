@@ -927,14 +927,14 @@ resselect: entity work.multi4plex32
     selector => resultc,
     output => result);
     
-ram: entity work.ram
-    Port map (
-    addr => mad,
-    clk => clk,
-    din => tom,
-    dout => mout,
-    mr => mr,
-    wren => memwren);
+-- ram: entity work.ram
+--     Port map (
+--     addr => mad,
+--     clk => clk,
+--     din => tom,
+--     dout => mout,
+--     mr => mr,
+--     wren => memwren);
 
 ext4 <= instruction(11 downto 8) & '0';
 wren_mem(3 downto 0) <= memwren(3 downto 0);

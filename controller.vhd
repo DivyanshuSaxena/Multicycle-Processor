@@ -492,112 +492,6 @@ end Behavioral;
 
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
-use IEEE.NUMERIC_STD.ALL;
-
-entity counter is
-    Port ( clk : in std_logic;
-           pushbutton : in std_logic;
-           clock : out std_logic);
-end counter;
-
-architecture behavioral of counter is
-signal c : std_logic_vector(31 downto 0) := "00000000000000000000000000000000";
-begin
-    process (clk)
-    begin
-        if clk = '1' and clk'event then 
-            c <= std_logic_vector(unsigned(c) + 1);
-            if pushbutton ='0' then
-                -- y <= c(15 downto 14);
-                clock <= c(24);
-            else 
-                -- y <= c(1 downto 0);
-                clock <= c(0);
-            end if;         
-        end if;
-    end process;
-    
-end behavioral;
-
-----------------------------------------------------------------------------------
-
-library IEEE;
-use IEEE.STD_LOGIC_1164.ALL;
-use IEEE.NUMERIC_STD.ALL;
-
-entity bcd is
-    Port( bin : in std_logic_vector(3 downto 0);
-          output : out std_logic_vector(6 downto 0));
-end bcd;
-
-architecture behavioral of bcd is
-begin
-with bin select
-output <= "1111001" when "0001",
-          "0100100" when "0010",
-          "0110000" when "0011",
-          "0011001" when "0100",
-          "0010010" when "0101",
-          "0000010" when "0110",
-          "1111000" when "0111",
-          "0000000" when "1000",
-          "0010000" when "1001",
-          "0001000" when "1010",
-          "0000011" when "1011",
-          "1000110" when "1100",
-          "0100001" when "1101",
-          "0000110" when "1110",
-          "0001110" when "1111",
-          "1000000" when others;
-          
-end behavioral;
-
-----------------------------------------------------------------------------------
-
-library IEEE;
-use IEEE.STD_LOGIC_1164.ALL;
-use IEEE.NUMERIC_STD.ALL;
-
-entity bin_select is
-    Port ( b_in : in std_logic_vector(15 downto 0);
-           b_out : out std_logic_vector(3 downto 0);
-           anode : in std_logic_vector(3 downto 0));
-end bin_select;
-
-architecture behavioral of bin_select is
-begin
-with anode select
-    b_out <= b_in(15 downto 12) when "0111",
-             b_in(11 downto 8) when "1011",
-             b_in(7 downto 4) when "1101",
-             b_in(3 downto 0) when others;
-             
-end behavioral;
-
-----------------------------------------------------------------------------------
-
-library IEEE;
-use IEEE.STD_LOGIC_1164.ALL;
-use IEEE.NUMERIC_STD.ALL;
-
-entity anode_decoder is
-    Port ( anode_sel : in std_logic_vector(1 downto 0);
-           anode_out : out std_logic_vector(3 downto 0));
-end anode_decoder; 
-          
-architecture behavioral of anode_decoder is
-begin
-with anode_sel select
-    anode_out <= "0111" when "00",
-                 "1011" when "01",
-                 "1101" when "10",
-                 "1110" when others;
-end behavioral;
-
-----------------------------------------------------------------------------------
-
-library IEEE;
-use IEEE.STD_LOGIC_1164.ALL;
 
 -- Uncomment the following library declaration if using
 -- arithmetic functions with Signed or Unsigned values
@@ -611,9 +505,7 @@ use IEEE.STD_LOGIC_1164.ALL;
 entity common is
   Port (
   clk: in std_logic;
-  regview: in std_logic_vector(15 downto 0);
-  pushbutton: in std_logic;
-  regval: out std_logic_vector(15 downto 0) );
+  pushbutton: in std_logic );
 end common;
 
 architecture Behavioral of common is
@@ -624,19 +516,9 @@ signal wren,flags: std_logic_vector(3 downto 0);
 signal rfreset: std_logic := '0';
 signal control_with_reset: std_logic_vector(35 downto 0);
 -- signal regval: std_logic_vector(15 downto 0);
-signal regdata1,regdata2,regdata3,regdata4,regdata5,regdata6,regdata7,regdata8: std_logic_vector(31 downto 0);
-signal regdata9,regdata10,regdata11,regdata12,regdata13,regdata14,regdata15: std_logic_vector(31 downto 0);
+-- signal regdata1,regdata2,regdata3,regdata4,regdata5,regdata6,regdata7,regdata8: std_logic_vector(31 downto 0);
+-- signal regdata9,regdata10,regdata11,regdata12,regdata13,regdata14,regdata15: std_logic_vector(31 downto 0);
 begin
--- ssd: entity work.ssd
---     Port map (
---         b => regval(15 downto 0),
---         clk => clk,
---         anode => anode,
---         cathode => cathode,
---         clock => clock,
---         pushbutton => pushbutton
---     );
-
 counter: entity work.counter
     Port map (
         clk => clk,
