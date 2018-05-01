@@ -536,7 +536,7 @@ entity ram is
 end ram;
 
 architecture Behavioral of ram is
-type memory_type is array(0 to 4096) of std_logic_vector(31 downto 0);
+type memory_type is array(0 to 1023) of std_logic_vector(31 downto 0);
 signal memory: memory_type  := ("11100011101000000010000000000011", "11100011101000000011000000000111", "11100000100000100001000000000011", "11100101100100100001000000000001", "11100000010000100001000000000011", "11100101100000100011000000000011", "11100000000001000000001110010010", others => (others => '0'));
 begin
     process(clk)

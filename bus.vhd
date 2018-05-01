@@ -461,7 +461,7 @@ signal sel: std_logic_vector(3 downto 0);
 begin
     process(haddr)
     begin
-        if haddr(15 downto 2)="00001111111111" then
+        if haddr(15 downto 2)="00000011111111" then
             if haddr(1 downto 0)="00" then
                 sel <= "0001";
             elsif haddr(1 downto 0)="01" then
